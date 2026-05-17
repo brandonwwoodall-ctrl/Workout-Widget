@@ -705,6 +705,26 @@ function migrateKgToLbs() {
 }
 migrateKgToLbs();
 
+// Remove Brandon's personal default workouts from devices that got them seeded
+// but skip any device that has actual workout history (those are real users with real data)
+function migrateRemoveDefaultWorkouts() {
+  if (localStorage.getItem("ww-stripped-defaults")) return;
+  var defaultIds = ["8whz4wx","9g91v0c","bv54jdr","wayzfov"];
+  try {
+    var hiRaw = localStorage.getItem("ww-hi4");
+    var hasHistory = hiRaw && JSON.parse(hiRaw).length > 0;
+    if (!hasHistory) {
+      var woRaw = localStorage.getItem("ww-wo4");
+      if (woRaw) {
+        var wos = JSON.parse(woRaw).filter(function(w) { return defaultIds.indexOf(w.id) === -1; });
+        localStorage.setItem("ww-wo4", JSON.stringify(wos));
+      }
+    }
+  } catch(e) {}
+  localStorage.setItem("ww-stripped-defaults","1");
+}
+migrateRemoveDefaultWorkouts();
+
 function MiniChart({data,color}) {
   if(!data||data.length===0) return null;
   var max=Math.max(...data,1);
@@ -721,7 +741,7 @@ function App() {
   const [session,   setSession]      = useStorage("ww-session", null);
   const [tab,       setTab]          = useState("workouts");
   const [exercises, setEx]           = useStorage("ww-ex4", DEFAULT_EXERCISES);
-  const [workouts,  setWorkouts]     = useStorage("ww-wo4", DEFAULT_WORKOUTS);
+  const [workouts,  setWorkouts]     = useStorage("ww-wo4", []);
   const [history,   setHistory]      = useStorage("ww-hi4", []);
   const [muscleGroups, setMuscleGroups] = useStorage("ww-mg1", MUSCLE_GROUPS.slice());
   const [weightUnit, setWeightUnit] = useStorage("ww-unit","lbs");

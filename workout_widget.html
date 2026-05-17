@@ -765,13 +765,13 @@ function App() {
       tab==="workouts" && React.createElement(WorkoutsTab,{workouts,setWorkouts,exercises,active,setActive,onTab:setTab,showToast,onDemo:setDemo,session,onAdmin:isAdmin?()=>setShowAdmin(true):null,muscleGroups}),
       tab==="programs" && React.createElement(ProgramsTab,{workouts,setWorkouts,exercises,showToast,onTab:setTab,muscleGroups}),
       tab==="active"   && React.createElement(ActiveTab,{active,setActive,exercises,setHistory,onTab:setTab,showToast,onDemo:setDemo,weightUnit,setWeightUnit}),
-      tab==="history"  && React.createElement(HistoryTab,{history,exercises,onProgress:setProgEx}),
+      tab==="history"  && React.createElement(HistoryTab,{history,setHistory,exercises,onProgress:setProgEx}),
       tab==="library"  && React.createElement(LibraryTab,{exercises,setEx,showToast,onDemo:setDemo,muscleGroups,session,isAdmin}),
       React.createElement("nav",{className:"tabbar"},
         TABS.map(t=>React.createElement("button",{key:t.id,className:"tb"+(tab===t.id?" on":""),onClick:()=>setTab(t.id)},React.createElement(t.I),t.label))
       ),
       demo    && React.createElement(DemoScreen,{exId:demo,exercises,onClose:()=>setDemo(null)}),
-      progEx  && React.createElement(ProgressScreen,{exId:progEx,exercises,history,onClose:()=>setProgEx(null)}),
+      progEx  && React.createElement(ProgressScreen,{exId:progEx,exercises,history,setHistory,onClose:()=>setProgEx(null)}),
       showAdmin&&React.createElement(AdminPortal,{exercises,setEx,onClose:()=>setShowAdmin(false),showToast,muscleGroups,setMuscleGroups}),
       toast   && React.createElement("div",{className:"toast"},toast)
     )
@@ -1027,7 +1027,10 @@ function ActiveTab({active,setActive,exercises,setHistory,onTab,showToast,onDemo
 }
 
 // ─── HISTORY TAB ─────────────────────────────────────────────────────────────
-function HistoryTab({history,exercises,onProgress}) {
+function HistoryTab({history,setHistory,exercises,onProgress}) {
+  const [delConfirm, setDelConfirm] = useState(null); // {id, name} of session to delete
+  const [clearAll,   setClearAll]   = useState(false);
+
   const totalW=history.length,totalS=history.reduce((a,h)=>a+h.log.reduce((b,e)=>b+e.sets.filter(s=>s.done).length,0),0),totalT=history.reduce((a,h)=>a+(h.duration||0),0);
   const fmt=iso=>{const d=new Date(iso);return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
 
@@ -1036,7 +1039,23 @@ function HistoryTab({history,exercises,onProgress}) {
   history.forEach(h=>h.log.forEach(le=>{le.sets.filter(s=>s.done&&s.weight>0).forEach(s=>{if(!prMap[le.exId]||s.weight>prMap[le.exId])prMap[le.exId]=s.weight;});}));
   const prList = Object.entries(prMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,w])=>({ex:exercises.find(x=>x.id===id),w})).filter(x=>x.ex);
 
+  const confirmDeleteSession = () => { setHistory(h=>h.filter(x=>x.id!==delConfirm.id)); setDelConfirm(null); };
+  const confirmClearAll = () => { setHistory([]); setClearAll(false); };
+
+  const deleteModal = (show, title, body, onConfirm, onCancel) => show && React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
+    React.createElement("div",{style:{background:"#ffffff",border:"2px solid #CC1A2A",borderRadius:16,padding:"28px 24px 20px",maxWidth:340,width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}},
+      React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"#CC1A2A",marginBottom:10,textAlign:"center"}},title),
+      React.createElement("div",{style:{fontSize:14,color:"#333",textAlign:"center",marginBottom:22}},body),
+      React.createElement("div",{style:{display:"flex",gap:10}},
+        React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid var(--border2)",background:"#fff",color:"var(--text)",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:onCancel},"Cancel"),
+        React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"none",background:"#CC1A2A",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:onConfirm},"Yes, Delete")
+      )
+    )
+  );
+
   return React.createElement(React.Fragment,null,
+    deleteModal(!!delConfirm,"DELETE SESSION","This session will be permanently removed from your history.",confirmDeleteSession,()=>setDelConfirm(null)),
+    deleteModal(clearAll,"CLEAR ALL HISTORY","All workout sessions will be permanently deleted. This cannot be undone.",confirmClearAll,()=>setClearAll(false)),
     React.createElement("div",{className:"hdr"},React.createElement("h1",null,React.createElement("span",{className:"w"},"WORKOUT "),React.createElement("span",{className:"s"},"HISTORY"))),
     React.createElement("div",{className:"content"},
       React.createElement("div",{className:"stat-row"},
@@ -1055,13 +1074,21 @@ function HistoryTab({history,exercises,onProgress}) {
       history.length===0
         ?React.createElement("div",{className:"empty"},React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📊"),React.createElement("h3",null,"NO HISTORY YET"),React.createElement("p",null,"Complete your first workout to see progress here."))
         :React.createElement(React.Fragment,null,
-          React.createElement("div",{className:"sec"},"RECENT SESSIONS"),
+          React.createElement("div",{className:"sec",style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+            React.createElement("span",null,"RECENT SESSIONS"),
+            React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"#CC1A2A",background:"none",border:"1.5px solid #CC1A2A",borderRadius:8,padding:"3px 10px",cursor:"pointer"},onClick:()=>setClearAll(true)},"Clear All")
+          ),
           history.map(function(h){
             var exS=h.log.map(function(le){var ex=exercises.find(function(x){return x.id===le.exId;});var d=le.sets.filter(function(s){return s.done;});return ex?ex.name+" - "+d.length+"x":null;}).filter(Boolean);
             var groups=h.muscleGroups||[];
             return React.createElement("div",{key:h.id,className:"hist-card"},
-              React.createElement("div",{className:"hist-title"},h.workoutName),
-              React.createElement("div",{className:"hist-date"},fmt(h.date)," - ",h.duration||0," min"),
+              React.createElement("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}},
+                React.createElement("div",{style:{flex:1,minWidth:0}},
+                  React.createElement("div",{className:"hist-title"},h.workoutName),
+                  React.createElement("div",{className:"hist-date"},fmt(h.date)," - ",h.duration||0," min")
+                ),
+                React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"2px 4px",color:"#CC1A2A",fontSize:18,lineHeight:1,flexShrink:0},onClick:function(){setDelConfirm({id:h.id,name:h.workoutName+" on "+fmt(h.date)});},title:"Delete session"},"🗑")
+              ),
               groups.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}},groups.map(function(g){return React.createElement("span",{key:g,className:"mpill",style:{color:"#fff",borderColor:cc(g),background:cc(g),fontSize:11}},g);})),
               exS.map(function(s,i){return React.createElement("div",{key:i,className:"hist-ex"},"- ",s);})
             );
@@ -1072,7 +1099,8 @@ function HistoryTab({history,exercises,onProgress}) {
 }
 
 // ─── PROGRESS SCREEN ─────────────────────────────────────────────────────────
-function ProgressScreen({exId,exercises,history,onClose}) {
+function ProgressScreen({exId,exercises,history,setHistory,onClose}) {
+  const [delSession, setDelSession] = useState(null); // {date} of session entry to remove this exercise from
   const ex=exercises.find(x=>x.id===exId);
   if(!ex) return React.createElement("div",{className:"prog-screen"},
     React.createElement("div",{className:"prog-hdr"},
@@ -1082,7 +1110,7 @@ function ProgressScreen({exId,exercises,history,onClose}) {
     React.createElement("div",{style:{padding:24,textAlign:"center",color:"var(--muted)"}},React.createElement("p",null,"This exercise no longer exists in the library."))
   );
 
-  // Gather all logged sets for this exercise
+  // Gather all logged sets for this exercise, keeping a reference to the parent session id
   const sessions = history.filter(function(h){return h.log.some(function(l){return l.exId===exId;});})
     .map(function(h){
       var le=h.log.find(function(l){return l.exId===exId;});
@@ -1090,14 +1118,34 @@ function ProgressScreen({exId,exercises,history,onClose}) {
       var maxWeight=doneSets.length>0?Math.max.apply(null,doneSets.map(function(s){return s.weight;})):0;
       var maxReps=doneSets.length>0?Math.max.apply(null,doneSets.map(function(s){return s.reps;})):0;
       var totalVol=doneSets.reduce(function(a,s){return a+(s.reps*s.weight);},0);
-      return {date:h.date,maxWeight:maxWeight,maxReps:maxReps,totalVol:totalVol,sets:doneSets.length};
+      return {histId:h.id,date:h.date,maxWeight:maxWeight,maxReps:maxReps,totalVol:totalVol,sets:doneSets.length};
     }).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
 
   const prWeight=Math.max(0,...sessions.map(s=>s.maxWeight));
   const prReps=Math.max(0,...sessions.map(s=>s.maxReps));
   const fmt=iso=>{const d=new Date(iso);return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});};
 
+  const confirmDelSession = () => {
+    setHistory(function(hs){return hs.map(function(h){
+      if(h.id!==delSession.histId) return h;
+      var newLog=h.log.filter(function(l){return l.exId!==exId;});
+      if(newLog.length===0) return null; // remove entire session if no exercises left
+      return Object.assign({},h,{log:newLog});
+    }).filter(Boolean);});
+    setDelSession(null);
+  };
+
   return React.createElement("div",{className:"prog-screen"},
+    delSession && React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
+      React.createElement("div",{style:{background:"#ffffff",border:"2px solid #CC1A2A",borderRadius:16,padding:"28px 24px 20px",maxWidth:340,width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}},
+        React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"#CC1A2A",marginBottom:10,textAlign:"center"}},"REMOVE ENTRY"),
+        React.createElement("div",{style:{fontSize:14,color:"#333",textAlign:"center",marginBottom:22}},"Remove ",ex.name," data from the session on ",fmt(delSession.date),"?"),
+        React.createElement("div",{style:{display:"flex",gap:10}},
+          React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid var(--border2)",background:"#fff",color:"var(--text)",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:()=>setDelSession(null)},"Cancel"),
+          React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"none",background:"#CC1A2A",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:confirmDelSession},"Yes, Remove")
+        )
+      )
+    ),
     React.createElement("div",{className:"prog-hdr"},
       React.createElement("button",{className:"btn-icon",onClick:onClose},React.createElement(Ic.Back)),
       React.createElement("div",{style:{flex:1}},
@@ -1124,8 +1172,11 @@ function ProgressScreen({exId,exercises,history,onClose}) {
             React.createElement("div",{className:"sec"},"SESSION LOG"),
             [...sessions].reverse().map((s,i)=>React.createElement("div",{key:i,className:"card2"},
               React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-                React.createElement("div",{style:{fontSize:12,color:"var(--muted)"}},fmt(s.date)),
-                s.maxWeight>0&&s.maxWeight===prWeight&&React.createElement("span",{style:{color:"var(--acc)",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",gap:3}},React.createElement(Ic.Star)," PR")
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                  React.createElement("div",{style:{fontSize:12,color:"var(--muted)"}},fmt(s.date)),
+                  s.maxWeight>0&&s.maxWeight===prWeight&&React.createElement("span",{style:{color:"var(--acc)",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",gap:3}},React.createElement(Ic.Star)," PR")
+                ),
+                React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"2px 4px",color:"#CC1A2A",fontSize:16,lineHeight:1},onClick:()=>setDelSession(s),title:"Remove this entry"},"🗑")
               ),
               React.createElement("div",{style:{display:"flex",gap:14,marginTop:6}},
                 React.createElement("span",{style:{fontSize:13,fontWeight:600}},s.maxWeight>0?s.maxWeight+" lbs":"BW"),

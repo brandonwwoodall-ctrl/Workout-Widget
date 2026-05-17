@@ -217,7 +217,7 @@ const CSS = `
   --bg:#F4F6FB;--s1:#E8EEFF;--s2:#D8E2F8;--s3:#C8D4F0;
   --border:#A8B8D8;--border2:#8899CC;
   --acc:#1A3A8F;--acc2:#0066CC;--acc3:#FFB800;
-  --text:#0A0F2C;--muted:#5566AA;--dim:#99AACC;
+  --text:#0A0F2C;--muted:#1E3370;--dim:#6677AA;
   --danger:#CC1A2A;--success:#0A7A3A;
   --r:14px;--r2:10px;
   --fh:'Bebas Neue',sans-serif;--fb:'Outfit',sans-serif;
@@ -245,19 +245,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);}
 .btn-icon:hover{background:var(--s3);}
 .btn-del{background:transparent;color:var(--danger);border:none;padding:5px;cursor:pointer;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
 .btn-del:hover{background:rgba(255,71,87,.12);}
-.btn-info{background:transparent;color:var(--muted);border:none;padding:5px;cursor:pointer;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:color .15s;}
-.btn-info:hover{color:var(--acc3);}
+.btn-info{background:var(--s2);color:var(--acc2);border:1px solid var(--border);padding:5px;cursor:pointer;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.btn-info:hover{color:var(--acc3);background:var(--s3);}
 .inp{background:var(--s3);border:1.5px solid var(--border2);border-radius:9px;padding:10px 13px;color:var(--text);font-family:var(--fb);font-size:14px;width:100%;outline:none;transition:border-color .2s;}
 .inp:focus{border-color:var(--acc3);}
-.inp::placeholder{color:var(--muted);}
+.inp::placeholder{color:#7A8FC0;}
 select.inp{cursor:pointer;appearance:none;}
 textarea.inp{resize:vertical;min-height:80px;}
-.lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.lbl{font-size:11px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
-.chip{padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--s2);font-size:11px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .15s;}
+.chip{padding:6px 13px;border-radius:20px;border:1.5px solid var(--border2);background:var(--s2);font-size:12px;font-weight:600;cursor:pointer;color:var(--acc);transition:all .15s;}
 .chip.on{background:var(--acc3);border-color:var(--acc3);color:#fff;}
 .chip-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
-.sec{font-family:var(--fh);font-size:12px;letter-spacing:1.5px;color:var(--muted);margin:18px 0 9px;}
+.sec{font-family:var(--fh);font-size:13px;letter-spacing:1.5px;color:var(--acc);margin:18px 0 9px;}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(5px);z-index:50;display:flex;align-items:flex-end;}
 .modal{background:var(--s1);border-top:1px solid var(--border);border-radius:22px 22px 0 0;width:100%;max-height:92dvh;display:flex;flex-direction:column;animation:slideUp .25s cubic-bezier(.32,.72,0,1);}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -266,10 +266,10 @@ textarea.inp{resize:vertical;min-height:80px;}
 .modal-title{font-family:var(--fh);font-size:20px;letter-spacing:.5px;}
 .modal-body{overflow-y:auto;padding:0 16px 48px;flex:1;}
 .mpill{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid;}
-.wcard{background:var(--s2);border:1.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:10px;transition:border-color .2s;}
-.wcard:hover{border-color:var(--border2);}
-.wcard-title{font-family:var(--fh);font-size:20px;letter-spacing:.3px;margin-bottom:6px;}
-.wcard-meta{color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap;}
+.wcard{background:#ffffff;border:2px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(26,58,143,0.1);transition:border-color .2s;}
+.wcard:hover{border-color:var(--acc);}
+.wcard-title{font-family:var(--fh);font-size:22px;letter-spacing:.3px;margin-bottom:6px;color:var(--text);}
+.wcard-meta{color:var(--text);font-size:13px;font-weight:600;display:flex;gap:10px;flex-wrap:wrap;}
 .abanner{background:linear-gradient(135deg,var(--acc3),#5C3ECC);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity .15s;}
 .abanner h3{font-family:var(--fh);font-size:16px;color:#fff;letter-spacing:.3px;}
 .abanner p{font-size:11px;color:rgba(255,255,255,.65);margin-top:1px;}
@@ -279,9 +279,9 @@ textarea.inp{resize:vertical;min-height:80px;}
 .day-tile.sel{border-color:var(--acc);background:rgba(232,255,71,.06);}
 .day-emoji{font-size:22px;margin-bottom:6px;}
 .day-name{font-family:var(--fh);font-size:14px;letter-spacing:.3px;margin-bottom:3px;}
-.day-desc{font-size:10px;color:var(--muted);line-height:1.4;}
+.day-desc{font-size:11px;color:var(--acc);font-weight:500;line-height:1.4;}
 .set-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
-.set-num{width:20px;text-align:center;font-size:11px;color:var(--muted);font-weight:600;flex-shrink:0;}
+.set-num{width:22px;text-align:center;font-size:13px;color:var(--acc);font-weight:700;flex-shrink:0;}
 .set-inp{flex:1;background:var(--s3);border:1.5px solid var(--border2);border-radius:7px;padding:8px;color:var(--text);font-family:var(--fb);font-size:14px;text-align:center;outline:none;min-width:0;}
 .set-inp:focus{border-color:var(--acc3);}
 .set-chk{width:30px;height:30px;border-radius:7px;border:1.5px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:transparent;transition:all .15s;flex-shrink:0;}
@@ -293,21 +293,21 @@ textarea.inp{resize:vertical;min-height:80px;}
 .stat-row{display:flex;gap:7px;margin-bottom:14px;}
 .stat-box{flex:1;background:var(--s2);border:1.5px solid var(--border2);border-radius:11px;padding:12px;text-align:center;}
 .stat-val{font-family:var(--fh);font-size:24px;color:var(--acc);letter-spacing:.5px;}
-.stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:1px;}
+.stat-lbl{font-size:11px;color:var(--acc);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:2px;}
 .prog-bar{height:3px;background:var(--s2);border-radius:3px;margin-top:10px;overflow:hidden;}
 .prog-fill{height:100%;background:var(--acc);border-radius:3px;transition:width .4s;}
-.empty{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty{text-align:center;padding:50px 20px;color:var(--acc);}
 .empty h3{font-family:var(--fh);font-size:22px;color:var(--text);letter-spacing:.5px;margin-bottom:8px;}
-.empty p{font-size:13px;line-height:1.6;}
-.hist-card{background:var(--s2);border:1.5px solid var(--border2);border-radius:var(--r);padding:15px 17px;margin-bottom:9px;}
-.hist-title{font-family:var(--fh);font-size:17px;letter-spacing:.3px;margin-bottom:3px;}
-.hist-date{font-size:11px;color:var(--muted);margin-bottom:9px;}
-.hist-ex{font-size:12px;color:var(--muted);margin-bottom:2px;}
+.empty p{font-size:14px;line-height:1.6;color:var(--acc);}
+.hist-card{background:#ffffff;border:2px solid var(--border2);border-radius:var(--r);padding:15px 17px;margin-bottom:9px;box-shadow:0 2px 6px rgba(26,58,143,0.08);}
+.hist-title{font-family:var(--fh);font-size:18px;letter-spacing:.3px;margin-bottom:3px;color:var(--text);}
+.hist-date{font-size:12px;color:var(--acc);font-weight:600;margin-bottom:9px;}
+.hist-ex{font-size:13px;color:var(--text);font-weight:500;margin-bottom:3px;}
 .ex-item{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--s3);border:1.5px solid var(--border2);border-radius:11px;margin-bottom:7px;cursor:pointer;transition:border-color .15s;}
 .ex-item:hover{border-color:var(--acc3);}
 .ex-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.ex-name{font-weight:500;font-size:14px;flex:1;}
-.ex-cat{font-size:10px;color:var(--muted);}
+.ex-name{font-weight:600;font-size:15px;flex:1;color:var(--text);}
+.ex-cat{font-size:11px;color:var(--acc);font-weight:600;}
 .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--s1);border:1px solid var(--acc);color:var(--acc);border-radius:100px;padding:9px 18px;font-size:12px;font-weight:600;z-index:100;white-space:nowrap;animation:fadeT 2.5s ease forwards;box-shadow:0 4px 20px rgba(232,255,71,.15);}
 @keyframes fadeT{0%{opacity:0;transform:translateX(-50%) translateY(8px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}75%{opacity:1}100%{opacity:0}}
 .admin-screen{position:fixed;inset:0;background:var(--bg);z-index:70;display:flex;flex-direction:column;overflow:hidden;}
@@ -837,7 +837,7 @@ function WorkoutCard({w,exercises,onStart,onEdit,onDelete,onDemo}) {
     React.createElement("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}},
       React.createElement("div",null,
         React.createElement("div",{className:"wcard-title"},w.name),
-        groups.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}},groups.map(g=>React.createElement("span",{key:g,className:"mpill",style:{color:cc(g),borderColor:cc(g)+"44",background:cc(g)+"11"}},g)))
+        groups.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}},groups.map(g=>React.createElement("span",{key:g,className:"mpill",style:{color:"#ffffff",borderColor:cc(g),background:cc(g)}},g)))
       ),
       React.createElement("div",{style:{display:"flex",gap:4,flexShrink:0}},
         React.createElement("button",{className:"btn-icon",style:{width:30,height:30},onClick:onEdit},React.createElement(Ic.Edit)),
@@ -846,8 +846,8 @@ function WorkoutCard({w,exercises,onStart,onEdit,onDelete,onDemo}) {
     ),
     React.createElement("div",{className:"wcard-meta"},React.createElement("span",null,"📋 ",w.exercises.length," exercises"),w.goal&&React.createElement("span",null,"🎯 ",w.goal)),
     React.createElement("div",{style:{marginTop:8,display:"flex",flexWrap:"wrap",gap:4}},
-      exInfos.map((ex,i)=>React.createElement("span",{key:i,className:"badge",style:{background:cc(ex.category)+"18",color:cc(ex.category),border:"1px solid "+cc(ex.category)+"33",fontSize:10}},ex.name)),
-      w.exercises.length>4&&React.createElement("span",{className:"badge",style:{background:"var(--s2)",color:"var(--muted)"}},"+",w.exercises.length-4)
+      exInfos.map((ex,i)=>React.createElement("span",{key:i,className:"badge",style:{background:cc(ex.category)+"22",color:cc(ex.category),border:"1.5px solid "+cc(ex.category),fontSize:11,fontWeight:700}},ex.name)),
+      w.exercises.length>4&&React.createElement("span",{className:"badge",style:{background:"var(--s3)",color:"var(--acc)",border:"1.5px solid var(--border2)",fontSize:11,fontWeight:700}},"+",w.exercises.length-4," more")
     ),
     React.createElement("button",{className:"btn-acc",style:{marginTop:12},onClick:onStart},React.createElement(Ic.Play)," START WORKOUT")
   );
@@ -1006,14 +1006,14 @@ function ActiveTab({active,setActive,exercises,setHistory,onTab,showToast,onDemo
             React.createElement("button",{className:"btn-info",onClick:function(){return onDemo(ex.id);}},React.createElement(Ic.Info))
           ),
           React.createElement("div",{style:{display:"flex",gap:7,marginBottom:5,paddingLeft:26}},
-            ["Reps","lbs"].map(function(l,i){return React.createElement("div",{key:i,style:{flex:1,textAlign:"center",fontSize:9,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.5}},l);}),
+            ["Reps","lbs"].map(function(l,i){return React.createElement("div",{key:i,style:{flex:1,textAlign:"center",fontSize:12,fontWeight:700,color:"var(--acc)",textTransform:"uppercase",letterSpacing:.5}},l);}),
             React.createElement("div",{style:{width:30}}),
             React.createElement("div",{style:{width:28}})
           ),
           le.sets.map(function(s,si){
             return React.createElement("div",{key:si,className:"set-row"},
               React.createElement("div",{className:"set-num"},si+1),
-              React.createElement("input",{className:"set-inp",type:"number",value:s._repsEmpty?"":s.reps,min:0,placeholder:"0",style:s.done?{opacity:.45}:{},onChange:function(e){var v=e.target.value;if(v===""){updateSet(ei,si,"_repsEmpty",true);updateSet(ei,si,"reps",0);}else{updateSet(ei,si,"_repsEmpty",false);updateSet(ei,si,"reps",Number(v));}}}),React.createElement("input",{className:"set-inp",type:"number",value:s._weightEmpty?"":s.weight,min:0,step:.5,placeholder:"0",style:s.done?{opacity:.45}:{},onChange:function(e){var v=e.target.value;if(v===""){updateSet(ei,si,"_weightEmpty",true);updateSet(ei,si,"weight",0);}else{updateSet(ei,si,"_weightEmpty",false);updateSet(ei,si,"weight",Number(v));}}}),
+              React.createElement("input",{className:"set-inp",type:"number",value:s._repsEmpty?"":s.reps,min:0,placeholder:"0",style:s.done?{opacity:.7,textDecoration:"line-through"}:{},onChange:function(e){var v=e.target.value;if(v===""){updateSet(ei,si,"_repsEmpty",true);updateSet(ei,si,"reps",0);}else{updateSet(ei,si,"_repsEmpty",false);updateSet(ei,si,"reps",Number(v));}}}),React.createElement("input",{className:"set-inp",type:"number",value:s._weightEmpty?"":s.weight,min:0,step:.5,placeholder:"0",style:s.done?{opacity:.7,textDecoration:"line-through"}:{},onChange:function(e){var v=e.target.value;if(v===""){updateSet(ei,si,"_weightEmpty",true);updateSet(ei,si,"weight",0);}else{updateSet(ei,si,"_weightEmpty",false);updateSet(ei,si,"weight",Number(v));}}}),
               React.createElement("button",{className:"set-chk"+(s.done?" done":""),onClick:function(){return updateSet(ei,si,"done",!s.done);}},React.createElement(Ic.Check)),
               React.createElement("button",{className:"btn-del",style:{width:24,height:24},onClick:function(){return removeSet(ei,si);}},React.createElement(Ic.Trash))
             );
@@ -1062,7 +1062,7 @@ function HistoryTab({history,exercises,onProgress}) {
             return React.createElement("div",{key:h.id,className:"hist-card"},
               React.createElement("div",{className:"hist-title"},h.workoutName),
               React.createElement("div",{className:"hist-date"},fmt(h.date)," - ",h.duration||0," min"),
-              groups.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}},groups.map(function(g){return React.createElement("span",{key:g,className:"mpill",style:{color:cc(g),borderColor:cc(g)+"44",background:cc(g)+"11",fontSize:9}},g);})),
+              groups.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}},groups.map(function(g){return React.createElement("span",{key:g,className:"mpill",style:{color:"#fff",borderColor:cc(g),background:cc(g),fontSize:11}},g);})),
               exS.map(function(s,i){return React.createElement("div",{key:i,className:"hist-ex"},"- ",s);})
             );
           })

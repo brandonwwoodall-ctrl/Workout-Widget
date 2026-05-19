@@ -725,6 +725,19 @@ function migrateRemoveDefaultWorkouts() {
 }
 migrateRemoveDefaultWorkouts();
 
+function BarChart({data,labels,color,height}) {
+  if(!data||!data.length) return null;
+  var mx=Math.max(...data,1), H=height||52;
+  return React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:3,height:H+(labels?18:0),paddingBottom:labels?18:0,position:"relative"}},
+    data.map(function(v,i){
+      return React.createElement("div",{key:i,style:{flex:1,height:"100%",display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center",position:"relative"}},
+        React.createElement("div",{style:{width:"100%",height:Math.max(v===0?2:4,Math.round((v/mx)*H)),background:v===0?"var(--border)":color||"var(--acc)",borderRadius:"3px 3px 0 0",transition:"height .3s"}}),
+        labels&&React.createElement("div",{style:{position:"absolute",bottom:-17,fontSize:8,color:"var(--muted)",textAlign:"center",width:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},labels[i])
+      );
+    })
+  );
+}
+
 function MiniChart({data,color}) {
   if(!data||data.length===0) return null;
   var max=Math.max(...data,1);
@@ -1046,9 +1059,210 @@ function ActiveTab({active,setActive,exercises,setHistory,onTab,showToast,onDemo
   );
 }
 
+// ─── TRENDS VIEW ─────────────────────────────────────────────────────────────
+function TrendView({history,exercises}) {
+  const [stack,setStack]=useState([{type:"overall"}]);
+  const [days,setDays]=useState(30);
+  var push=function(s){setStack(function(p){return[...p,s];});};
+  var pop=function(){setStack(function(p){return p.length>1?p.slice(0,-1):p;});};
+  var cur=stack[stack.length-1];
+  var filtH=days===0?history:history.filter(function(h){return new Date(h.date)>=new Date(Date.now()-days*86400000);});
+  var fmtD=function(iso){var d=new Date(iso);return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});};
+
+  var TimeFilter=React.createElement("div",{style:{display:"flex",gap:6,marginBottom:14}},
+    [{l:"7D",v:7},{l:"30D",v:30},{l:"90D",v:90},{l:"All",v:0}].map(function(t){
+      var on=days===t.v;
+      return React.createElement("button",{key:t.l,style:{flex:1,padding:"6px 0",borderRadius:8,border:"1.5px solid "+(on?"var(--acc)":"var(--border2)"),background:on?"var(--acc)":"transparent",color:on?"#fff":"var(--muted)",fontSize:12,fontWeight:700,cursor:"pointer"},onClick:function(){setDays(t.v);}},t.l);
+    })
+  );
+
+  var BackBtn=stack.length>1&&React.createElement("button",{style:{display:"flex",alignItems:"center",gap:5,background:"none",border:"none",cursor:"pointer",color:"var(--acc)",fontWeight:700,fontSize:13,padding:"0 0 14px"},onClick:pop},
+    React.createElement(Ic.Back)," ",stack.length>2?"Back":"All Trends"
+  );
+
+  // ── OVERALL ────────────────────────────────────────────────────────
+  if(cur.type==="overall"){
+    var totalW=filtH.length;
+    var totalT=filtH.reduce(function(a,h){return a+(h.duration||0);},0);
+    var avgPW=totalW===0?"0":days===0?(totalW/Math.max(1,Math.ceil(history.length?((new Date(history[0].date)-new Date(history[history.length-1].date))/604800000):1))).toFixed(1):(totalW/(days/7)).toFixed(1);
+
+    // Weekly bar data
+    var wkCnt=days===0?Math.min(16,Math.ceil(filtH.length||1)):Math.ceil(days/7);
+    var wkData=[],wkLabels=[];
+    for(var wi=wkCnt-1;wi>=0;wi--){
+      var ws=new Date(Date.now()-wi*7*86400000);ws.setHours(0,0,0,0);ws.setDate(ws.getDate()-ws.getDay());
+      var we=new Date(ws.getTime()+7*86400000);
+      wkData.push(filtH.filter(function(h){var d=new Date(h.date);return d>=ws&&d<we;}).length);
+      wkLabels.push(fmtD(ws.toISOString()));
+    }
+
+    // Volume trend per session
+    var volArr=filtH.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);}).map(function(h){
+      return h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
+    });
+
+    // Top workouts
+    var woMap={};
+    filtH.forEach(function(h){var k=h.workoutName;if(!woMap[k])woMap[k]={name:k,count:0};woMap[k].count++;});
+    var topWo=Object.values(woMap).sort(function(a,b){return b.count-a.count;}).slice(0,5);
+
+    // Top exercises
+    var exMap={};
+    filtH.forEach(function(h){h.log.forEach(function(l){exMap[l.exId]=(exMap[l.exId]||0)+1;});});
+    var topEx=Object.entries(exMap).sort(function(a,b){return b[1]-a[1];}).slice(0,5).map(function(e){var ex=exercises.find(function(x){return x.id===e[0];});return ex?{ex:ex,count:e[1]}:null;}).filter(Boolean);
+
+    return React.createElement("div",null,
+      TimeFilter,
+      totalW===0
+        ?React.createElement("div",{className:"empty",style:{padding:"36px 0"}},React.createElement("div",{style:{fontSize:40,marginBottom:8}},"📈"),React.createElement("h3",null,"NO DATA YET"),React.createElement("p",null,"Complete workouts to see trends."))
+        :React.createElement(React.Fragment,null,
+          React.createElement("div",{className:"stat-row"},
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalW),React.createElement("div",{className:"stat-lbl"},"Workouts")),
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},avgPW),React.createElement("div",{className:"stat-lbl"},"Per Week")),
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalT),React.createElement("div",{className:"stat-lbl"},"Minutes"))
+          ),
+          React.createElement("div",{className:"sec"},"FREQUENCY — workouts per week"),
+          React.createElement("div",{className:"card2",style:{marginBottom:14}},React.createElement(BarChart,{data:wkData,labels:wkLabels,color:"var(--acc)"})),
+          volArr.some(function(v){return v>0;})&&React.createElement(React.Fragment,null,
+            React.createElement("div",{className:"sec"},"VOLUME TREND (weight × reps)"),
+            React.createElement("div",{className:"card2",style:{marginBottom:14}},React.createElement(MiniChart,{data:volArr,color:"var(--acc2)"}))
+          ),
+          topWo.length>0&&React.createElement(React.Fragment,null,
+            React.createElement("div",{className:"sec",style:{marginBottom:4}},"BY WORKOUT — tap to drill down"),
+            topWo.map(function(w){return React.createElement("div",{key:w.name,className:"hist-card",style:{cursor:"pointer",marginBottom:8},onClick:function(){push({type:"workout",name:w.name});}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+                React.createElement("div",{style:{fontWeight:700,fontSize:14}},w.name),
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                  React.createElement("span",{style:{fontFamily:"var(--fh)",fontSize:15,color:"var(--acc)"}},w.count,"×"),
+                  React.createElement("span",{style:{color:"var(--muted)",fontSize:18,lineHeight:1}},">")
+                )
+              ),
+              React.createElement("div",{style:{fontSize:12,color:"var(--muted)",marginTop:2}},w.count," session"+(w.count===1?"":"s"))
+            );})
+          ),
+          topEx.length>0&&React.createElement(React.Fragment,null,
+            React.createElement("div",{className:"sec",style:{marginBottom:4}},"TOP EXERCISES — tap to drill down"),
+            topEx.map(function(item){return React.createElement("div",{key:item.ex.id,className:"ex-item",style:{cursor:"pointer",background:"#fff",borderRadius:12,marginBottom:6,padding:"10px 12px",border:"1.5px solid var(--border2)"},onClick:function(){push({type:"exercise",id:item.ex.id});}},
+              React.createElement("span",{className:"ex-dot",style:{background:cc(item.ex.category)}}),
+              React.createElement("div",{style:{flex:1}},React.createElement("div",{className:"ex-name"},item.ex.name),React.createElement("div",{className:"ex-cat"},item.ex.category)),
+              React.createElement("span",{style:{fontFamily:"var(--fh)",fontSize:14,color:"var(--acc)",marginRight:6}},item.count,"×"),
+              React.createElement("span",{style:{color:"var(--muted)",fontSize:18,lineHeight:1}},">")
+            );})
+          )
+        )
+    );
+  }
+
+  // ── WORKOUT DRILL-DOWN ────────────────────────────────────────────
+  if(cur.type==="workout"){
+    var woSess=filtH.filter(function(h){return h.workoutName===cur.name;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+    var woVol=woSess.map(function(h){return h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);});
+    var woDur=woSess.map(function(h){return h.duration||0;});
+    var avgDur=woSess.length?Math.round(woDur.reduce(function(a,v){return a+v;},0)/woSess.length):0;
+    var exFreqW={};
+    woSess.forEach(function(h){h.log.forEach(function(l){if(!exFreqW[l.exId])exFreqW[l.exId]={count:0,pr:0};exFreqW[l.exId].count++;l.sets.filter(function(s){return s.done&&s.weight>0;}).forEach(function(s){if(s.weight>exFreqW[l.exId].pr)exFreqW[l.exId].pr=s.weight;});});});
+    var woExList=Object.entries(exFreqW).map(function(e){var ex=exercises.find(function(x){return x.id===e[0];});return ex?{ex:ex,count:e[1].count,pr:e[1].pr}:null;}).filter(Boolean).sort(function(a,b){return b.count-a.count;});
+    return React.createElement("div",null,
+      BackBtn,
+      React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:20,marginBottom:2}},cur.name),
+      React.createElement("div",{style:{fontSize:12,color:"var(--muted)",marginBottom:14}},woSess.length," session"+(woSess.length===1?"":"s")+" · tap exercise for its trends"),
+      woSess.length===0
+        ?React.createElement(React.Fragment,null,TimeFilter,React.createElement("div",{className:"empty",style:{padding:"30px 0"}},React.createElement("p",null,"No sessions in this time range.")))
+        :React.createElement(React.Fragment,null,
+          TimeFilter,
+          React.createElement("div",{className:"stat-row"},
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},woSess.length),React.createElement("div",{className:"stat-lbl"},"Sessions")),
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},avgDur),React.createElement("div",{className:"stat-lbl"},"Avg Min")),
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},woExList.length),React.createElement("div",{className:"stat-lbl"},"Exercises"))
+          ),
+          woVol.some(function(v){return v>0;})&&React.createElement(React.Fragment,null,
+            React.createElement("div",{className:"sec"},"VOLUME TREND"),
+            React.createElement("div",{className:"card2",style:{marginBottom:14}},
+              React.createElement(MiniChart,{data:woVol,color:"var(--acc)"}),
+              woSess.length>1&&React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"var(--muted)"}},
+                React.createElement("span",null,fmtD(woSess[0].date)),React.createElement("span",null,fmtD(woSess[woSess.length-1].date)))
+            )
+          ),
+          woExList.length>0&&React.createElement(React.Fragment,null,
+            React.createElement("div",{className:"sec",style:{marginBottom:4}},"EXERCISES — tap for trends"),
+            woExList.map(function(item){return React.createElement("div",{key:item.ex.id,className:"ex-item",style:{cursor:"pointer",background:"#fff",borderRadius:12,marginBottom:6,padding:"10px 12px",border:"1.5px solid var(--border2)"},onClick:function(){push({type:"exercise",id:item.ex.id});}},
+              React.createElement("span",{className:"ex-dot",style:{background:cc(item.ex.category)}}),
+              React.createElement("div",{style:{flex:1}},React.createElement("div",{className:"ex-name"},item.ex.name),React.createElement("div",{className:"ex-cat"},item.pr>0?"PR: "+item.pr+" lbs":item.ex.category)),
+              React.createElement("span",{style:{color:"var(--muted)",fontSize:18,lineHeight:1}},">")
+            );})
+          ),
+          React.createElement("div",{className:"sec"},"SESSION TIMELINE"),
+          [...woSess].reverse().map(function(h){
+            var vol=h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
+            return React.createElement("div",{key:h.id,className:"card2",style:{marginBottom:8}},
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                React.createElement("div",{style:{fontSize:13,fontWeight:600}},fmtD(h.date)),
+                React.createElement("div",{style:{fontSize:12,color:"var(--muted)"}},h.duration||0," min")),
+              vol>0&&React.createElement("div",{style:{fontSize:12,color:"var(--muted)",marginTop:2}},vol.toLocaleString()," lbs volume")
+            );
+          })
+        )
+    );
+  }
+
+  // ── EXERCISE DRILL-DOWN ───────────────────────────────────────────
+  if(cur.type==="exercise"){
+    var eid=cur.id;
+    var ex=exercises.find(function(x){return x.id===eid;});
+    if(!ex)return React.createElement("div",null,BackBtn,React.createElement("p",{style:{color:"var(--muted)"}},"Exercise not found."));
+    var exSess=filtH.filter(function(h){return h.log.some(function(l){return l.exId===eid;});})
+      .map(function(h){var le=h.log.find(function(l){return l.exId===eid;});var done=le.sets.filter(function(s){return s.done;});var mW=done.length?Math.max.apply(null,done.map(function(s){return s.weight;})):0;var mR=done.length?Math.max.apply(null,done.map(function(s){return s.reps;})):0;var vol=done.reduce(function(a,s){return a+(s.reps*s.weight);},0);return{date:h.date,mW:mW,mR:mR,vol:vol,sets:done.length};})
+      .sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+    var prW=Math.max(0,...exSess.map(function(s){return s.mW;}));
+    var prR=Math.max(0,...exSess.map(function(s){return s.mR;}));
+    return React.createElement("div",null,
+      BackBtn,
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:2}},
+        React.createElement("span",{className:"ex-dot",style:{background:cc(ex.category),flexShrink:0}}),
+        React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18}},ex.name)
+      ),
+      React.createElement("div",{style:{fontSize:12,color:"var(--muted)",marginBottom:14}},ex.category," · ",exSess.length," session"+(exSess.length===1?"":"s")),
+      exSess.length===0
+        ?React.createElement(React.Fragment,null,TimeFilter,React.createElement("div",{className:"empty",style:{padding:"30px 0"}},React.createElement("p",null,"No data in this time range.")))
+        :React.createElement(React.Fragment,null,
+          TimeFilter,
+          React.createElement("div",{className:"stat-row"},
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},exSess.length),React.createElement("div",{className:"stat-lbl"},"Sessions")),
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},prW>0?prW+" lbs":"--"),React.createElement("div",{className:"stat-lbl"},"PR Weight")),
+            React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},prR||"--"),React.createElement("div",{className:"stat-lbl"},"Max Reps"))
+          ),
+          React.createElement("div",{className:"sec"},"MAX WEIGHT OVER TIME"),
+          React.createElement("div",{className:"card2",style:{marginBottom:14}},
+            React.createElement(MiniChart,{data:exSess.map(function(s){return s.mW;}),color:cc(ex.category)}),
+            exSess.length>1&&React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"var(--muted)"}},
+              React.createElement("span",null,fmtD(exSess[0].date)),React.createElement("span",null,fmtD(exSess[exSess.length-1].date)))
+          ),
+          exSess.some(function(s){return s.vol>0;})&&React.createElement(React.Fragment,null,
+            React.createElement("div",{className:"sec"},"VOLUME (weight × reps)"),
+            React.createElement("div",{className:"card2",style:{marginBottom:14}},React.createElement(MiniChart,{data:exSess.map(function(s){return s.vol;}),color:"var(--acc2)"}))
+          ),
+          React.createElement("div",{className:"sec"},"SESSION LOG"),
+          [...exSess].reverse().map(function(s,i){return React.createElement("div",{key:i,className:"card2",style:{marginBottom:8}},
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+              React.createElement("div",{style:{fontSize:12,color:"var(--muted)"}},fmtD(s.date)),
+              s.mW===prW&&prW>0&&React.createElement("span",{style:{color:"var(--acc)",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",gap:3}},React.createElement(Ic.Star)," PR")
+            ),
+            React.createElement("div",{style:{display:"flex",gap:14,marginTop:4}},
+              React.createElement("span",{style:{fontSize:13,fontWeight:600}},s.mW>0?s.mW+" lbs":"BW"),
+              React.createElement("span",{style:{fontSize:13,color:"var(--muted)"}},"×",s.mR," reps"),
+              s.sets>0&&React.createElement("span",{style:{fontSize:13,color:"var(--muted)"}},s.sets," sets")
+            )
+          );})
+        )
+    );
+  }
+  return null;
+}
+
 // ─── HISTORY TAB ─────────────────────────────────────────────────────────────
 function HistoryTab({history,setHistory,exercises,onProgress}) {
-  const [delConfirm, setDelConfirm] = useState(null); // {id, name} of session to delete
+  const [histView,   setHistView]   = useState("history"); // "history" | "trends"
+  const [delConfirm, setDelConfirm] = useState(null);
   const [clearAll,   setClearAll]   = useState(false);
 
   const totalW=history.length,totalS=history.reduce((a,h)=>a+h.log.reduce((b,e)=>b+e.sets.filter(s=>s.done).length,0),0),totalT=history.reduce((a,h)=>a+(h.duration||0),0);
@@ -1073,11 +1287,17 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
     )
   );
 
+  var SegCtrl=React.createElement("div",{style:{display:"flex",background:"var(--s2)",borderRadius:10,padding:3,marginTop:8}},
+    ["history","trends"].map(function(v){var on=histView===v;return React.createElement("button",{key:v,style:{flex:1,padding:"7px 0",borderRadius:8,border:"none",background:on?"#fff":"transparent",color:on?"var(--acc)":"var(--muted)",fontWeight:700,fontSize:12,cursor:"pointer",boxShadow:on?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all .2s",letterSpacing:.5},onClick:function(){setHistView(v);}},v.toUpperCase());})
+  );
+
   return React.createElement(React.Fragment,null,
     deleteModal(!!delConfirm,"DELETE SESSION","This session will be permanently removed from your history.",confirmDeleteSession,()=>setDelConfirm(null)),
     deleteModal(clearAll,"CLEAR ALL HISTORY","All workout sessions will be permanently deleted. This cannot be undone.",confirmClearAll,()=>setClearAll(false)),
-    React.createElement("div",{className:"hdr"},React.createElement("h1",null,React.createElement("span",{className:"w"},"WORKOUT "),React.createElement("span",{className:"s"},"HISTORY"))),
+    React.createElement("div",{className:"hdr"},React.createElement("h1",null,React.createElement("span",{className:"w"},"WORKOUT "),React.createElement("span",{className:"s"},"HISTORY")),SegCtrl),
     React.createElement("div",{className:"content"},
+      histView==="trends"&&React.createElement(TrendView,{history:history,exercises:exercises}),
+      histView==="history"&&React.createElement(React.Fragment,null,
       React.createElement("div",{className:"stat-row"},
         React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalW),React.createElement("div",{className:"stat-lbl"},"Workouts")),
         React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalS),React.createElement("div",{className:"stat-lbl"},"Sets Done")),
@@ -1114,6 +1334,7 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
             );
           })
         )
+      )
     )
   );
 }

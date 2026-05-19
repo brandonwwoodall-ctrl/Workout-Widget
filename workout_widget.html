@@ -219,9 +219,21 @@ const CSS = `
   --acc:#1A3A8F;--acc2:#0066CC;--acc3:#FFB800;
   --text:#0A0F2C;--muted:#1E3370;--dim:#6677AA;
   --danger:#CC1A2A;--success:#0A7A3A;
+  --card:#ffffff;--card-shadow:rgba(26,58,143,0.1);
   --r:14px;--r2:10px;
   --fh:'Bebas Neue',sans-serif;--fb:'Outfit',sans-serif;
 }
+[data-theme="dark"]{
+  --bg:#0D0F1A;--s1:#141722;--s2:#1A2035;--s3:#212840;
+  --border:#283055;--border2:#374070;
+  --acc:#5B8CFF;--acc2:#4DAAFF;--acc3:#FFB800;
+  --text:#E8ECFF;--muted:#8899CC;--dim:#5566AA;
+  --danger:#FF4D5C;--success:#22CC66;
+  --card:#1A2035;--card-shadow:rgba(0,0,0,0.3);
+}
+[data-theme="dark"] .tabbar{background:rgba(13,15,26,0.98);}
+[data-theme="dark"] .modal{background:var(--s1);}
+[data-theme="dark"] #loading{background:#0D0F1A;color:#E8ECFF;}
 body{background:var(--bg);color:var(--text);font-family:var(--fb);}
 .app{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);overflow-x:hidden;}
 .hdr{padding:48px 18px 14px;position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);}
@@ -266,7 +278,7 @@ textarea.inp{resize:vertical;min-height:80px;}
 .modal-title{font-family:var(--fh);font-size:20px;letter-spacing:.5px;}
 .modal-body{overflow-y:auto;padding:0 16px 48px;flex:1;}
 .mpill{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid;}
-.wcard{background:#ffffff;border:2px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(26,58,143,0.1);transition:border-color .2s;}
+.wcard{background:var(--card);border:2px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 2px 8px var(--card-shadow);transition:border-color .2s;}
 .wcard:hover{border-color:var(--acc);}
 .wcard-title{font-family:var(--fh);font-size:22px;letter-spacing:.3px;margin-bottom:6px;color:var(--text);}
 .wcard-meta{color:var(--text);font-size:13px;font-weight:600;display:flex;gap:10px;flex-wrap:wrap;}
@@ -299,7 +311,7 @@ textarea.inp{resize:vertical;min-height:80px;}
 .empty{text-align:center;padding:50px 20px;color:var(--acc);}
 .empty h3{font-family:var(--fh);font-size:22px;color:var(--text);letter-spacing:.5px;margin-bottom:8px;}
 .empty p{font-size:14px;line-height:1.6;color:var(--acc);}
-.hist-card{background:#ffffff;border:2px solid var(--border2);border-radius:var(--r);padding:15px 17px;margin-bottom:9px;box-shadow:0 2px 6px rgba(26,58,143,0.08);}
+.hist-card{background:var(--card);border:2px solid var(--border2);border-radius:var(--r);padding:15px 17px;margin-bottom:9px;box-shadow:0 2px 6px var(--card-shadow);}
 .hist-title{font-family:var(--fh);font-size:18px;letter-spacing:.3px;margin-bottom:3px;color:var(--text);}
 .hist-date{font-size:12px;color:var(--acc);font-weight:600;margin-bottom:9px;}
 .hist-ex{font-size:13px;color:var(--text);font-weight:500;margin-bottom:3px;}
@@ -758,6 +770,7 @@ function App() {
   const [history,   setHistory]      = useStorage("ww-hi4", []);
   const [muscleGroups, setMuscleGroups] = useStorage("ww-mg1", MUSCLE_GROUPS.slice());
   const [weightUnit, setWeightUnit] = useStorage("ww-unit","lbs");
+  const [theme,     setTheme]     = useStorage("ww-theme","light");
   const [active,    setActive]    = useState(null);
   const [demo,      setDemo]      = useState(null);
   const [progEx,    setProgEx]    = useState(null);
@@ -765,6 +778,9 @@ function App() {
   const [toast,     setToast]     = useState(null);
   const tmr = useRef(null);
   const showToast = msg => { if(tmr.current) clearTimeout(tmr.current); setToast(msg); tmr.current = setTimeout(()=>setToast(null), 2700); };
+
+  // Apply theme to document
+  useEffect(function(){ document.documentElement.setAttribute("data-theme", theme); }, [theme]);
 
   // Version migration: force-sync exercises and muscle groups from code defaults
   useEffect(function() {
@@ -795,7 +811,7 @@ function App() {
   return React.createElement(React.Fragment,null,
     React.createElement("style",null,CSS),
     React.createElement("div",{className:"app"},
-      tab==="workouts" && React.createElement(WorkoutsTab,{workouts,setWorkouts,exercises,active,setActive,onTab:setTab,showToast,onDemo:setDemo,session,onAdmin:isAdmin?()=>setShowAdmin(true):null,muscleGroups}),
+      tab==="workouts" && React.createElement(WorkoutsTab,{workouts,setWorkouts,exercises,active,setActive,onTab:setTab,showToast,onDemo:setDemo,session,onAdmin:isAdmin?()=>setShowAdmin(true):null,muscleGroups,theme,setTheme}),
       tab==="programs" && React.createElement(ProgramsTab,{workouts,setWorkouts,exercises,showToast,onTab:setTab,muscleGroups}),
       tab==="active"   && React.createElement(ActiveTab,{active,setActive,exercises,setHistory,onTab:setTab,showToast,onDemo:setDemo,weightUnit,setWeightUnit}),
       tab==="history"  && React.createElement(HistoryTab,{history,setHistory,exercises,onProgress:setProgEx}),
@@ -812,7 +828,7 @@ function App() {
 }
 
 // ─── WIDGET TAB ─────────────────────────────────────────────────────────────
-function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,showToast,onDemo,session,onAdmin,muscleGroups}) {
+function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,showToast,onDemo,session,onAdmin,muscleGroups,theme,setTheme}) {
   const [showCreate,setShowCreate]=useState(false);
   const [editW,setEditW]=useState(null);
   const [deleteConfirm,setDeleteConfirm]=useState(null);
@@ -826,6 +842,7 @@ function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,show
       React.createElement("div",{className:"hdr-row"},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},React.createElement("img",{src:"data:image/jpeg;base64,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",alt:"",style:{width:44,height:44,borderRadius:"50%",objectFit:"cover",border:"2px solid var(--acc)",flexShrink:0}}),React.createElement("div",null,React.createElement("h1",null,React.createElement("span",{className:"w"},"WORKOUT"),React.createElement("span",{className:"s"}," WIDGET")),React.createElement("div",{className:"subtitle"},"Hey "+session.username+" — time to grind"))),
         React.createElement("div",{style:{display:"flex",gap:6,alignItems:"center"}},
+          React.createElement("button",{className:"btn-icon",title:theme==="dark"?"Light mode":"Dark mode",onClick:()=>setTheme(t=>t==="dark"?"light":"dark"),style:{fontSize:16}},theme==="dark"?"☀️":"🌙"),
           React.createElement("button",{className:"btn-icon",onClick:()=>{setEditW(null);setShowCreate(true);}},React.createElement(Ic.Plus)),
           React.createElement("div",{className:"user-pill",onClick:()=>setShowMenu(m=>!m)},
             React.createElement("div",{className:"user-avatar"},userInitial),
@@ -850,10 +867,10 @@ function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,show
     ),
     showCreate&&React.createElement(WorkoutEditor,{workout:editW,exercises,onSave:w=>{setWorkouts(ws=>editW?ws.map(x=>x.id===w.id?w:x):[...ws,w]);setShowCreate(false);showToast(editW?"Updated":"Created");},onClose:()=>setShowCreate(false),onDemo,muscleGroups}),
     deleteConfirm&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
-      React.createElement("div",{style:{background:"#ffffff",borderRadius:18,padding:28,maxWidth:320,width:"100%",boxShadow:"0 12px 48px rgba(0,0,0,0.55)",border:"2px solid #CC1A2A"}},
+      React.createElement("div",{style:{background:"var(--card)",borderRadius:18,padding:28,maxWidth:320,width:"100%",boxShadow:"0 12px 48px rgba(0,0,0,0.55)",border:"2px solid #CC1A2A"}},
         React.createElement("div",{style:{fontSize:36,textAlign:"center",marginBottom:12}},"🗑️"),
         React.createElement("div",{style:{fontWeight:700,fontSize:18,textAlign:"center",marginBottom:8,color:"#CC1A2A"}},"Delete Workout?"),
-        React.createElement("div",{style:{fontSize:14,color:"#333333",textAlign:"center",marginBottom:22}},(()=>{const w=workouts.find(x=>x.id===deleteConfirm);return w?`"${w.name}" will be permanently removed.`:"This workout will be permanently removed.";})()),
+        React.createElement("div",{style:{fontSize:14,color:"var(--text)",textAlign:"center",marginBottom:22}},(()=>{const w=workouts.find(x=>x.id===deleteConfirm);return w?`"${w.name}" will be permanently removed.`:"This workout will be permanently removed.";})()),
         React.createElement("div",{style:{display:"flex",gap:10}},
           React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid #A8B8D8",background:"#E8EEFF",color:"#0A0F2C",fontWeight:700,fontSize:14,cursor:"pointer"},onClick:()=>setDeleteConfirm(null)},"No, Keep It"),
           React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"none",background:"#CC1A2A",color:"#ffffff",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:()=>{setWorkouts(ws=>ws.filter(x=>x.id!==deleteConfirm));setDeleteConfirm(null);showToast("Deleted");}},"Yes, Delete")
@@ -1142,7 +1159,7 @@ function TrendView({history,exercises}) {
           ),
           topEx.length>0&&React.createElement(React.Fragment,null,
             React.createElement("div",{className:"sec",style:{marginBottom:4}},"TOP EXERCISES — tap to drill down"),
-            topEx.map(function(item){return React.createElement("div",{key:item.ex.id,className:"ex-item",style:{cursor:"pointer",background:"#fff",borderRadius:12,marginBottom:6,padding:"10px 12px",border:"1.5px solid var(--border2)"},onClick:function(){push({type:"exercise",id:item.ex.id});}},
+            topEx.map(function(item){return React.createElement("div",{key:item.ex.id,className:"ex-item",style:{cursor:"pointer",background:"var(--card)",borderRadius:12,marginBottom:6,padding:"10px 12px",border:"1.5px solid var(--border2)"},onClick:function(){push({type:"exercise",id:item.ex.id});}},
               React.createElement("span",{className:"ex-dot",style:{background:cc(item.ex.category)}}),
               React.createElement("div",{style:{flex:1}},React.createElement("div",{className:"ex-name"},item.ex.name),React.createElement("div",{className:"ex-cat"},item.ex.category)),
               React.createElement("span",{style:{fontFamily:"var(--fh)",fontSize:14,color:"var(--acc)",marginRight:6}},item.count,"×"),
@@ -1185,7 +1202,7 @@ function TrendView({history,exercises}) {
           ),
           woExList.length>0&&React.createElement(React.Fragment,null,
             React.createElement("div",{className:"sec",style:{marginBottom:4}},"EXERCISES — tap for trends"),
-            woExList.map(function(item){return React.createElement("div",{key:item.ex.id,className:"ex-item",style:{cursor:"pointer",background:"#fff",borderRadius:12,marginBottom:6,padding:"10px 12px",border:"1.5px solid var(--border2)"},onClick:function(){push({type:"exercise",id:item.ex.id});}},
+            woExList.map(function(item){return React.createElement("div",{key:item.ex.id,className:"ex-item",style:{cursor:"pointer",background:"var(--card)",borderRadius:12,marginBottom:6,padding:"10px 12px",border:"1.5px solid var(--border2)"},onClick:function(){push({type:"exercise",id:item.ex.id});}},
               React.createElement("span",{className:"ex-dot",style:{background:cc(item.ex.category)}}),
               React.createElement("div",{style:{flex:1}},React.createElement("div",{className:"ex-name"},item.ex.name),React.createElement("div",{className:"ex-cat"},item.pr>0?"PR: "+item.pr+" lbs":item.ex.category)),
               React.createElement("span",{style:{color:"var(--muted)",fontSize:18,lineHeight:1}},">")
@@ -1268,6 +1285,17 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
   const totalW=history.length,totalS=history.reduce((a,h)=>a+h.log.reduce((b,e)=>b+e.sets.filter(s=>s.done).length,0),0),totalT=history.reduce((a,h)=>a+(h.duration||0),0);
   const fmt=iso=>{const d=new Date(iso);return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
 
+  // Current workout streak (consecutive days with at least one workout)
+  const streak=(function(){
+    if(!history.length)return 0;
+    var days=[...new Set(history.map(function(h){return new Date(h.date).toDateString();}))].sort(function(a,b){return new Date(b)-new Date(a);});
+    var today=new Date().toDateString(),yest=new Date(Date.now()-86400000).toDateString();
+    if(days[0]!==today&&days[0]!==yest)return 0;
+    var n=1;
+    for(var i=1;i<days.length;i++){var d1=new Date(days[i-1]).setHours(12,0,0,0),d2=new Date(days[i]).setHours(12,0,0,0);if(Math.round((d1-d2)/86400000)===1)n++;else break;}
+    return n;
+  })();
+
   // Compute PRs: best single-set weight for each exercise
   const prMap = {};
   history.forEach(h=>h.log.forEach(le=>{le.sets.filter(s=>s.done&&s.weight>0).forEach(s=>{if(!prMap[le.exId]||s.weight>prMap[le.exId])prMap[le.exId]=s.weight;});}));
@@ -1277,18 +1305,18 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
   const confirmClearAll = () => { setHistory([]); setClearAll(false); };
 
   const deleteModal = (show, title, body, onConfirm, onCancel) => show && React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
-    React.createElement("div",{style:{background:"#ffffff",border:"2px solid #CC1A2A",borderRadius:16,padding:"28px 24px 20px",maxWidth:340,width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}},
+    React.createElement("div",{style:{background:"var(--card)",border:"2px solid #CC1A2A",borderRadius:16,padding:"28px 24px 20px",maxWidth:340,width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}},
       React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"#CC1A2A",marginBottom:10,textAlign:"center"}},title),
-      React.createElement("div",{style:{fontSize:14,color:"#333",textAlign:"center",marginBottom:22}},body),
+      React.createElement("div",{style:{fontSize:14,color:"var(--text)",textAlign:"center",marginBottom:22}},body),
       React.createElement("div",{style:{display:"flex",gap:10}},
-        React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid var(--border2)",background:"#fff",color:"var(--text)",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:onCancel},"Cancel"),
+        React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid var(--border2)",background:"var(--card)",color:"var(--text)",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:onCancel},"Cancel"),
         React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"none",background:"#CC1A2A",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:onConfirm},"Yes, Delete")
       )
     )
   );
 
   var SegCtrl=React.createElement("div",{style:{display:"flex",background:"var(--s2)",borderRadius:10,padding:3,marginTop:8}},
-    ["history","trends"].map(function(v){var on=histView===v;return React.createElement("button",{key:v,style:{flex:1,padding:"7px 0",borderRadius:8,border:"none",background:on?"#fff":"transparent",color:on?"var(--acc)":"var(--muted)",fontWeight:700,fontSize:12,cursor:"pointer",boxShadow:on?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all .2s",letterSpacing:.5},onClick:function(){setHistView(v);}},v.toUpperCase());})
+    ["history","trends"].map(function(v){var on=histView===v;return React.createElement("button",{key:v,style:{flex:1,padding:"7px 0",borderRadius:8,border:"none",background:on?"var(--card)":"transparent",color:on?"var(--acc)":"var(--muted)",fontWeight:700,fontSize:12,cursor:"pointer",boxShadow:on?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all .2s",letterSpacing:.5},onClick:function(){setHistView(v);}},v.toUpperCase());})
   );
 
   return React.createElement(React.Fragment,null,
@@ -1298,6 +1326,13 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
     React.createElement("div",{className:"content"},
       histView==="trends"&&React.createElement(TrendView,{history:history,exercises:exercises}),
       histView==="history"&&React.createElement(React.Fragment,null,
+      streak>=2&&React.createElement("div",{style:{background:"linear-gradient(135deg,#FF6B00,#FF9500)",borderRadius:12,padding:"10px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:10}},
+        React.createElement("span",{style:{fontSize:24,lineHeight:1}},"🔥"),
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"#fff",letterSpacing:.5}},streak,"-DAY STREAK"),
+          React.createElement("div",{style:{fontSize:11,color:"rgba(255,255,255,.8)"}},streak<7?"Keep it up!":streak<30?"On fire!":"Legendary!")
+        )
+      ),
       React.createElement("div",{className:"stat-row"},
         React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalW),React.createElement("div",{className:"stat-lbl"},"Workouts")),
         React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalS),React.createElement("div",{className:"stat-lbl"},"Sets Done")),
@@ -1378,11 +1413,11 @@ function ProgressScreen({exId,exercises,history,setHistory,onClose}) {
 
   return React.createElement("div",{className:"prog-screen"},
     delSession && React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
-      React.createElement("div",{style:{background:"#ffffff",border:"2px solid #CC1A2A",borderRadius:16,padding:"28px 24px 20px",maxWidth:340,width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}},
+      React.createElement("div",{style:{background:"var(--card)",border:"2px solid #CC1A2A",borderRadius:16,padding:"28px 24px 20px",maxWidth:340,width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}},
         React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"#CC1A2A",marginBottom:10,textAlign:"center"}},"REMOVE ENTRY"),
-        React.createElement("div",{style:{fontSize:14,color:"#333",textAlign:"center",marginBottom:22}},"Remove ",ex.name," data from the session on ",fmt(delSession.date),"?"),
+        React.createElement("div",{style:{fontSize:14,color:"var(--text)",textAlign:"center",marginBottom:22}},"Remove ",ex.name," data from the session on ",fmt(delSession.date),"?"),
         React.createElement("div",{style:{display:"flex",gap:10}},
-          React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid var(--border2)",background:"#fff",color:"var(--text)",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:()=>setDelSession(null)},"Cancel"),
+          React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid var(--border2)",background:"var(--card)",color:"var(--text)",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:()=>setDelSession(null)},"Cancel"),
           React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"none",background:"#CC1A2A",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:confirmDelSession},"Yes, Remove")
         )
       )
@@ -1532,10 +1567,10 @@ function LibraryTab({exercises,setEx,showToast,onDemo,muscleGroups:customGroups,
 
     // Custom exercise delete confirmation
     exDeleteConfirm && React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
-      React.createElement("div",{style:{background:"#ffffff",borderRadius:18,padding:28,maxWidth:320,width:"100%",boxShadow:"0 12px 48px rgba(0,0,0,0.55)",border:"2px solid #CC1A2A"}},
+      React.createElement("div",{style:{background:"var(--card)",borderRadius:18,padding:28,maxWidth:320,width:"100%",boxShadow:"0 12px 48px rgba(0,0,0,0.55)",border:"2px solid #CC1A2A"}},
         React.createElement("div",{style:{fontSize:36,textAlign:"center",marginBottom:12}},"🗑️"),
         React.createElement("div",{style:{fontWeight:700,fontSize:18,textAlign:"center",marginBottom:8,color:"#CC1A2A"}},"Delete Exercise?"),
-        React.createElement("div",{style:{fontSize:14,color:"#333333",textAlign:"center",marginBottom:22}},'"',exDeleteConfirm.name,'" will be permanently removed from the library.'),
+        React.createElement("div",{style:{fontSize:14,color:"var(--text)",textAlign:"center",marginBottom:22}},'"',exDeleteConfirm.name,'" will be permanently removed from the library.'),
         React.createElement("div",{style:{display:"flex",gap:10}},
           React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid #A8B8D8",background:"#E8EEFF",color:"#0A0F2C",fontWeight:700,fontSize:14,cursor:"pointer"},onClick:function(){setExDeleteConfirm(null);}},"No, Keep It"),
           React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"none",background:"#CC1A2A",color:"#ffffff",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:function(){setEx(function(es){return es.filter(function(x){return x.id!==exDeleteConfirm.id;});});showToast("Exercise deleted");setExDeleteConfirm(null);}},"Yes, Delete")

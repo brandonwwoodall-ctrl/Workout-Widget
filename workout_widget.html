@@ -833,6 +833,8 @@ function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,show
   const [editW,setEditW]=useState(null);
   const [deleteConfirm,setDeleteConfirm]=useState(null);
   const [showMenu,setShowMenu]=useState(false);
+  const [showSchedule,setShowSchedule]=useState(false);
+  const [schedule,setSchedule]=useStorage("ww-schedule",{});
   const userInitial=(session?.username||"?")[0].toUpperCase();
 
   const startWorkout=w=>{setActive({workoutId:w.id,workoutName:w.name,muscleGroups:w.muscleGroups||[],startedAt:Date.now(),log:w.exercises.map(e=>({exId:e.id,sets:Array.from({length:e.sets||3},()=>({reps:e.reps||10,weight:e.weight||0,done:false}))}))});onTab("active");showToast("Let's go!");};
@@ -843,6 +845,7 @@ function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,show
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},React.createElement("img",{src:"data:image/jpeg;base64,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",alt:"",style:{width:44,height:44,borderRadius:"50%",objectFit:"cover",border:"2px solid var(--acc)",flexShrink:0}}),React.createElement("div",null,React.createElement("h1",null,React.createElement("span",{className:"w"},"WORKOUT"),React.createElement("span",{className:"s"}," WIDGET")),React.createElement("div",{className:"subtitle"},"Hey "+session.username+" — time to grind"))),
         React.createElement("div",{style:{display:"flex",gap:6,alignItems:"center"}},
           React.createElement("button",{className:"btn-icon",title:theme==="dark"?"Light mode":"Dark mode",onClick:()=>setTheme(t=>t==="dark"?"light":"dark"),style:{fontSize:16}},theme==="dark"?"☀️":"🌙"),
+          React.createElement("button",{className:"btn-icon",title:"Weekly Schedule",onClick:()=>setShowSchedule(s=>!s),style:{fontSize:16,background:showSchedule?"var(--acc)":"",color:showSchedule?"#fff":""}},"📅"),
           React.createElement("button",{className:"btn-icon",onClick:()=>{setEditW(null);setShowCreate(true);}},React.createElement(Ic.Plus)),
           React.createElement("div",{className:"user-pill",onClick:()=>setShowMenu(m=>!m)},
             React.createElement("div",{className:"user-avatar"},userInitial),
@@ -858,13 +861,30 @@ function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,show
         React.createElement("button",{style:{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontFamily:"var(--fb)",fontSize:13,fontWeight:500,borderRadius:8},onClick:()=>{localStorage.removeItem("ww-session");window.location.reload();}},React.createElement(Ic.LogOut)," Sign Out")
       )
     ),
-    React.createElement("div",{className:"content"},
-      active&&React.createElement("div",{className:"abanner",onClick:()=>onTab("active")},React.createElement("div",{style:{fontSize:28}},"⚡"),React.createElement("div",null,React.createElement("h3",null,"SESSION IN PROGRESS"),React.createElement("p",null,"Tap to resume - ",active.workoutName))),
-      workouts.length===0
-        ?React.createElement("div",{className:"empty"},React.createElement("div",{style:{fontSize:50,marginBottom:12}},"🏋️"),React.createElement("h3",null,"NO WIDGET YET"),React.createElement("p",null,"Tap + to build a routine, or browse Programs to load a plan."))
-        :workouts.map(w=>React.createElement(WorkoutCard,{key:w.id,w,exercises,onStart:()=>startWorkout(w),onEdit:()=>{setEditW(w);setShowCreate(true);},onDelete:()=>{setDeleteConfirm(w.id);},onDemo})),
-      React.createElement("button",{className:"btn-acc",style:{marginTop:8,color:"#fff"},onClick:()=>{setEditW(null);setShowCreate(true);}},React.createElement(Ic.Plus)," NEW WORKOUT")
-    ),
+    showSchedule
+      ?React.createElement(ScheduleView,{workouts,schedule,setSchedule})
+      :React.createElement("div",{className:"content"},
+          active&&React.createElement("div",{className:"abanner",onClick:()=>onTab("active")},React.createElement("div",{style:{fontSize:28}},"⚡"),React.createElement("div",null,React.createElement("h3",null,"SESSION IN PROGRESS"),React.createElement("p",null,"Tap to resume - ",active.workoutName))),
+          (function(){
+            var todayWid=schedule[new Date().getDay()];
+            var todayWo=todayWid&&todayWid!=="rest"?workouts.find(function(w){return w.id===todayWid;}):null;
+            if(!todayWo)return null;
+            return React.createElement("div",{className:"abanner",style:{background:"linear-gradient(135deg,var(--acc),var(--acc2))",cursor:"default",flexDirection:"column",alignItems:"stretch",gap:6}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+                React.createElement("div",{style:{fontSize:24,flexShrink:0}},"📅"),
+                React.createElement("div",{style:{flex:1}},
+                  React.createElement("h3",{style:{color:"#fff",margin:0}},"TODAY'S WORKOUT"),
+                  React.createElement("p",{style:{color:"rgba(255,255,255,.8)",margin:0}},todayWo.name)
+                ),
+                React.createElement("button",{className:"btn-acc",style:{background:"rgba(255,255,255,.25)",border:"1.5px solid rgba(255,255,255,.5)",color:"#fff",flexShrink:0,padding:"8px 14px",fontSize:12},onClick:function(){startWorkout(todayWo);}},React.createElement(Ic.Play)," Start")
+              )
+            );
+          })(),
+          workouts.length===0
+            ?React.createElement("div",{className:"empty"},React.createElement("div",{style:{fontSize:50,marginBottom:12}},"🏋️"),React.createElement("h3",null,"NO WIDGET YET"),React.createElement("p",null,"Tap + to build a routine, or browse Programs to load a plan."))
+            :workouts.map(w=>React.createElement(WorkoutCard,{key:w.id,w,exercises,onStart:()=>startWorkout(w),onEdit:()=>{setEditW(w);setShowCreate(true);},onDelete:()=>{setDeleteConfirm(w.id);},onDemo})),
+          React.createElement("button",{className:"btn-acc",style:{marginTop:8,color:"#fff"},onClick:()=>{setEditW(null);setShowCreate(true);}},React.createElement(Ic.Plus)," NEW WORKOUT")
+        ),
     showCreate&&React.createElement(WorkoutEditor,{workout:editW,exercises,onSave:w=>{setWorkouts(ws=>editW?ws.map(x=>x.id===w.id?w:x):[...ws,w]);setShowCreate(false);showToast(editW?"Updated":"Created");},onClose:()=>setShowCreate(false),onDemo,muscleGroups}),
     deleteConfirm&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
       React.createElement("div",{style:{background:"var(--card)",borderRadius:18,padding:28,maxWidth:320,width:"100%",boxShadow:"0 12px 48px rgba(0,0,0,0.55)",border:"2px solid #CC1A2A"}},
@@ -900,6 +920,69 @@ function WorkoutCard({w,exercises,onStart,onEdit,onDelete,onDemo}) {
       w.exercises.length>4&&React.createElement("span",{className:"badge",style:{background:"var(--s3)",color:"var(--acc)",border:"1.5px solid var(--border2)",fontSize:11,fontWeight:700}},"+",w.exercises.length-4," more")
     ),
     React.createElement("button",{className:"btn-acc",style:{marginTop:12},onClick:onStart},React.createElement(Ic.Play)," START WORKOUT")
+  );
+}
+
+// ─── SCHEDULE VIEW ────────────────────────────────────────────────────────────
+function ScheduleView({workouts,schedule,setSchedule}) {
+  const [pickerDay,setPickerDay]=useState(null);
+  var DAY_FULL=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var DAY_SHORT=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  var todayIdx=new Date().getDay();
+  // Reorder to start Monday
+  var ORDER=[1,2,3,4,5,6,0];
+
+  return React.createElement("div",{className:"content",style:{paddingTop:4}},
+    React.createElement("div",{className:"sec",style:{marginTop:0}},"WEEKLY PLAN — tap a day to assign"),
+    ORDER.map(function(di){
+      var wid=schedule[di];
+      var wo=wid&&wid!=="rest"?workouts.find(function(w){return w.id===wid;}):null;
+      var isRest=wid==="rest";
+      var isToday=di===todayIdx;
+      return React.createElement("div",{key:di,onClick:function(){setPickerDay(di);},
+        style:{display:"flex",alignItems:"center",gap:12,background:"var(--card)",borderRadius:14,padding:"13px 16px",marginBottom:8,
+          border:"1.5px solid "+(isToday?"var(--acc)":"var(--border)"),
+          boxShadow:isToday?"0 0 0 3px var(--acc)22":"none",cursor:"pointer"}},
+        React.createElement("div",{style:{width:44,textAlign:"center",flexShrink:0}},
+          React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:15,letterSpacing:.5,color:isToday?"var(--acc)":"var(--text)"}},(DAY_SHORT[di]).toUpperCase()),
+          isToday&&React.createElement("div",{style:{fontSize:9,fontWeight:700,color:"var(--acc)",letterSpacing:.5,marginTop:1}},"TODAY")
+        ),
+        React.createElement("div",{style:{flex:1}},
+          wo
+            ?React.createElement(React.Fragment,null,
+              React.createElement("div",{style:{fontWeight:700,fontSize:14,color:"var(--text)"}},wo.name),
+              wo.muscleGroups&&wo.muscleGroups.length>0&&React.createElement("div",{style:{fontSize:11,color:"var(--muted)",marginTop:1}},wo.muscleGroups.join(", "))
+            )
+            :React.createElement("div",{style:{fontSize:13,color:isRest?"var(--dim)":"var(--border2)",fontStyle:"italic"}},isRest?"Rest Day":"— unassigned —")
+        ),
+        wo&&React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,flexShrink:0}},wo.muscleGroups&&wo.muscleGroups.slice(0,2).map(function(g){return React.createElement("span",{key:g,style:{width:8,height:8,borderRadius:"50%",background:cc(g),display:"inline-block"}});})),
+        React.createElement("div",{style:{color:"var(--muted)",fontSize:18,lineHeight:1,flexShrink:0}},">")
+      );
+    }),
+    pickerDay!==null&&React.createElement("div",{style:{position:"fixed",inset:0,zIndex:90,display:"flex",flexDirection:"column",justifyContent:"flex-end",background:"rgba(0,0,0,0.5)"},onClick:function(e){if(e.target===e.currentTarget)setPickerDay(null);}},
+      React.createElement("div",{style:{background:"var(--card)",borderRadius:"20px 20px 0 0",padding:"20px 18px 40px",maxHeight:"75vh",overflowY:"auto",boxShadow:"0 -8px 32px rgba(0,0,0,0.25)"}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}},
+          React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:20,letterSpacing:.5}},DAY_FULL[pickerDay].toUpperCase()),
+          React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:20,color:"var(--muted)"},onClick:function(){setPickerDay(null);}})
+        ),
+        React.createElement("button",{onClick:function(){setSchedule(function(s){var n={...s};n[pickerDay]="rest";return n;});setPickerDay(null);},
+          style:{width:"100%",padding:"13px 16px",borderRadius:12,border:"1.5px solid var(--border2)",background:"var(--s1)",color:"var(--dim)",fontFamily:"var(--fb)",fontSize:14,fontWeight:600,cursor:"pointer",textAlign:"left",marginBottom:8,display:"flex",alignItems:"center",gap:10}},
+          React.createElement("span",{style:{fontSize:18}},"😴")," Rest Day"
+        ),
+        workouts.length===0&&React.createElement("div",{style:{textAlign:"center",color:"var(--muted)",fontSize:13,padding:"12px 0"}},"No workouts yet — create one first."),
+        workouts.map(function(w){
+          var sel=schedule[pickerDay]===w.id;
+          return React.createElement("button",{key:w.id,onClick:function(){setSchedule(function(s){var n={...s};n[pickerDay]=w.id;return n;});setPickerDay(null);},
+            style:{width:"100%",padding:"13px 16px",borderRadius:12,border:"1.5px solid "+(sel?"var(--acc)":"var(--border2)"),background:sel?"var(--acc)11":"var(--s1)",color:"var(--text)",fontFamily:"var(--fb)",fontSize:14,fontWeight:sel?700:500,cursor:"pointer",textAlign:"left",marginBottom:8,display:"flex",alignItems:"center",gap:10}},
+            React.createElement("div",{style:{flex:1}},
+              React.createElement("div",{style:{fontWeight:700}},w.name),
+              w.muscleGroups&&w.muscleGroups.length>0&&React.createElement("div",{style:{fontSize:11,color:"var(--muted)",marginTop:2}},w.muscleGroups.join(", "))
+            ),
+            sel&&React.createElement("span",{style:{color:"var(--acc)",fontWeight:800,fontSize:16}},"✓")
+          );
+        })
+      )
+    )
   );
 }
 

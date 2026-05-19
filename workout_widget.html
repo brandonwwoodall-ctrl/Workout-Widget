@@ -1583,6 +1583,26 @@ function TrendView({history,exercises}) {
 }
 
 // ─── HISTORY TAB ─────────────────────────────────────────────────────────────
+function SwipeCard({onDelete,children}) {
+  const [offset,setOffset]=useState(0);
+  const [dragging,setDragging]=useState(false);
+  const startX=React.useRef(0);
+  const SNAP=72,AUTO=160;
+  const onTouchStart=function(e){startX.current=e.touches[0].clientX;setDragging(true);};
+  const onTouchMove=function(e){if(!dragging)return;var dx=e.touches[0].clientX-startX.current;if(dx<0)setOffset(Math.max(dx,-220));};
+  const onTouchEnd=function(){setDragging(false);if(offset<-AUTO){onDelete();}else if(offset<-SNAP){setOffset(-SNAP);}else{setOffset(0);}};
+  const reset=function(){setOffset(0);};
+  return React.createElement("div",{style:{position:"relative",borderRadius:14,marginBottom:9,overflow:"hidden"}},
+    React.createElement("div",{style:{position:"absolute",right:0,top:0,bottom:0,width:SNAP,background:"var(--danger)",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:"0 14px 14px 0",cursor:"pointer"},onClick:onDelete},
+      React.createElement("span",{style:{color:"#fff",fontSize:20}},"🗑")
+    ),
+    React.createElement("div",{style:{transform:"translateX("+offset+"px)",transition:dragging?"none":"transform 0.22s ease",willChange:"transform",touchAction:"pan-y"},
+      onTouchStart,onTouchMove,onTouchEnd,onClick:offset!==0?function(e){e.stopPropagation();reset();}:undefined},
+      children
+    )
+  );
+}
+
 function HistoryTab({history,setHistory,exercises,onProgress}) {
   const [histView,   setHistView]   = useState("history"); // "history" | "trends"
   const [delConfirm, setDelConfirm] = useState(null);
@@ -1662,16 +1682,17 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
           history.map(function(h){
             var exS=h.log.map(function(le){var ex=exercises.find(function(x){return x.id===le.exId;});var d=le.sets.filter(function(s){return s.done;});return ex?ex.name+" - "+d.length+"x":null;}).filter(Boolean);
             var groups=h.muscleGroups||[];
-            return React.createElement("div",{key:h.id,className:"hist-card"},
-              React.createElement("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}},
-                React.createElement("div",{style:{flex:1,minWidth:0}},
-                  React.createElement("div",{className:"hist-title"},h.workoutName),
-                  React.createElement("div",{className:"hist-date"},fmt(h.date)," - ",h.duration||0," min")
+            return React.createElement(SwipeCard,{key:h.id,onDelete:function(){setDelConfirm({id:h.id,name:h.workoutName+" on "+fmt(h.date)});}},
+              React.createElement("div",{className:"hist-card",style:{marginBottom:0}},
+                React.createElement("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}},
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{className:"hist-title"},h.workoutName),
+                    React.createElement("div",{className:"hist-date"},fmt(h.date)," - ",h.duration||0," min")
+                  )
                 ),
-                React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"2px 4px",color:"#CC1A2A",fontSize:18,lineHeight:1,flexShrink:0},onClick:function(){setDelConfirm({id:h.id,name:h.workoutName+" on "+fmt(h.date)});},title:"Delete session"},"🗑")
-              ),
-              groups.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}},groups.map(function(g){return React.createElement("span",{key:g,className:"mpill",style:{color:"#fff",borderColor:cc(g),background:cc(g),fontSize:11}},g);})),
-              exS.map(function(s,i){return React.createElement("div",{key:i,className:"hist-ex"},"- ",s);})
+                groups.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}},groups.map(function(g){return React.createElement("span",{key:g,className:"mpill",style:{color:"#fff",borderColor:cc(g),background:cc(g),fontSize:11}},g);})),
+                exS.map(function(s,i){return React.createElement("div",{key:i,className:"hist-ex"},"- ",s);})
+              )
             );
           })
         )

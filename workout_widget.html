@@ -813,7 +813,7 @@ function App() {
     React.createElement("div",{className:"app"},
       tab==="workouts" && React.createElement(WorkoutsTab,{workouts,setWorkouts,exercises,active,setActive,onTab:setTab,showToast,onDemo:setDemo,session,onAdmin:isAdmin?()=>setShowAdmin(true):null,muscleGroups,theme,setTheme}),
       tab==="programs" && React.createElement(ProgramsTab,{workouts,setWorkouts,exercises,showToast,onTab:setTab,muscleGroups}),
-      tab==="active"   && React.createElement(ActiveTab,{active,setActive,exercises,setHistory,onTab:setTab,showToast,onDemo:setDemo,weightUnit,setWeightUnit}),
+      tab==="active"   && React.createElement(ActiveTab,{active,setActive,exercises,history,setHistory,onTab:setTab,showToast,onDemo:setDemo,weightUnit,setWeightUnit}),
       tab==="history"  && React.createElement(HistoryTab,{history,setHistory,exercises,onProgress:setProgEx}),
       tab==="library"  && React.createElement(LibraryTab,{exercises,setEx,showToast,onDemo:setDemo,muscleGroups,session,isAdmin}),
       React.createElement("nav",{className:"tabbar"},
@@ -1022,49 +1022,143 @@ function WorkoutEditor({workout,exercises,onSave,onClose,onDemo,muscleGroups:cus
   );
 }
 
+// ─── COMPLETION SCREEN ────────────────────────────────────────────────────────
+function CompletionScreen({data,history,exercises,onDone}) {
+  var prMap={};
+  (history||[]).forEach(function(h){h.log.forEach(function(l){l.sets.filter(function(s){return s.done&&s.weight>0;}).forEach(function(s){if(!prMap[l.exId]||s.weight>prMap[l.exId])prMap[l.exId]=s.weight;});});});
+  var newPRs=[];
+  data.log.forEach(function(le){
+    var best=Math.max.apply(null,[0].concat(le.sets.filter(function(s){return s.done&&s.weight>0;}).map(function(s){return s.weight;})));
+    if(best>0&&best>(prMap[le.exId]||0)){var ex=exercises.find(function(x){return x.id===le.exId;});if(ex)newPRs.push({name:ex.name,weight:best,category:ex.category});}
+  });
+  var totalSets=data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).length;},0);
+  var totalVol=data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
+  return React.createElement("div",{style:{position:"fixed",inset:0,zIndex:80,background:"var(--bg)",display:"flex",flexDirection:"column",overflowY:"auto"}},
+    React.createElement("div",{style:{background:"linear-gradient(160deg,var(--acc),var(--acc2))",padding:"64px 24px 32px",textAlign:"center"}},
+      React.createElement("div",{style:{fontSize:56,marginBottom:8}},"🎉"),
+      React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:34,color:"#fff",letterSpacing:1,lineHeight:1}},"WORKOUT"),
+      React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:34,color:"rgba(255,255,255,.85)",letterSpacing:1,marginBottom:6}},"COMPLETE!"),
+      React.createElement("div",{style:{fontSize:13,color:"rgba(255,255,255,.75)"}},data.workoutName)
+    ),
+    React.createElement("div",{style:{padding:"20px 18px 48px",flex:1}},
+      React.createElement("div",{className:"stat-row",style:{marginBottom:20}},
+        React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},data.duration>0?data.duration+" m":"< 1m"),React.createElement("div",{className:"stat-lbl"},"Duration")),
+        React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalSets),React.createElement("div",{className:"stat-lbl"},"Sets Done")),
+        React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalVol>0?Math.round(totalVol/100)/10+"k":"--"),React.createElement("div",{className:"stat-lbl"},"lbs Vol"))
+      ),
+      newPRs.length>0&&React.createElement(React.Fragment,null,
+        React.createElement("div",{className:"sec",style:{display:"flex",alignItems:"center",gap:6,color:"var(--acc3)"}},"🏆 NEW PERSONAL RECORDS"),
+        newPRs.map(function(pr,i){return React.createElement("div",{key:i,className:"card2",style:{display:"flex",alignItems:"center",gap:10,marginBottom:6}},
+          React.createElement("div",{style:{width:10,height:10,borderRadius:"50%",background:cc(pr.category),flexShrink:0}}),
+          React.createElement("div",{style:{flex:1}},React.createElement("div",{style:{fontWeight:700,fontSize:13}},pr.name),React.createElement("div",{style:{fontSize:11,color:"var(--muted)"}},pr.category)),
+          React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"var(--acc3)",letterSpacing:.3}},pr.weight," lbs")
+        );})
+      ),
+      data.muscleGroups&&data.muscleGroups.length>0&&React.createElement(React.Fragment,null,
+        React.createElement("div",{className:"sec"},"MUSCLES WORKED"),
+        React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:20}},data.muscleGroups.map(function(g){return React.createElement("span",{key:g,className:"mpill",style:{color:"#fff",borderColor:cc(g),background:cc(g)}},g);}))
+      ),
+      React.createElement("button",{className:"btn-acc",onClick:onDone},React.createElement(Ic.Check)," SAVE & DONE")
+    )
+  );
+}
+
 // ─── ACTIVE TAB ───────────────────────────────────────────────────────────────
-function ActiveTab({active,setActive,exercises,setHistory,onTab,showToast,onDemo,weightUnit,setWeightUnit}) {
+function ActiveTab({active,setActive,exercises,history,setHistory,onTab,showToast,onDemo,weightUnit,setWeightUnit}) {
   const [elapsed,setElapsed]=useState(0);
+  const [restTimer,setRestTimer]=useState(null); // {remaining,total} | null
+  const [restSecs,setRestSecs]=useStorage("ww-rest",60);
+  const [completionData,setCompletionData]=useState(null);
+
   useEffect(()=>{if(!active)return;const iv=setInterval(()=>setElapsed(Math.floor((Date.now()-active.startedAt)/1000)),1000);return()=>clearInterval(iv);},[active]);
-  if(!active)return React.createElement(React.Fragment,null,React.createElement("div",{className:"hdr"},React.createElement("h1",null,React.createElement("span",{className:"w"},"ACTIVE "),React.createElement("span",{className:"s"},"SESSION"))),React.createElement("div",{className:"content"},React.createElement("div",{className:"empty"},React.createElement("div",{style:{fontSize:50,marginBottom:12}},"💤"),React.createElement("h3",null,"NO ACTIVE WORKOUT"),React.createElement("p",null,"Go to Workouts and start a session."),React.createElement("button",{className:"btn-ghost",style:{margin:"18px auto 0",display:"flex"},onClick:()=>onTab("workouts")},"Go to Workouts"))));
+
+  // Rest timer countdown
+  useEffect(function(){
+    if(!restTimer)return;
+    if(restTimer.remaining<=0){var t=setTimeout(function(){setRestTimer(null);},1200);return function(){clearTimeout(t);};}
+    var t=setTimeout(function(){setRestTimer(function(r){return r?{...r,remaining:r.remaining-1}:null;});},1000);
+    return function(){clearTimeout(t);};
+  },[restTimer]);
+
+  // Historical PRs (best weight per exercise from past sessions)
+  var prMap={};
+  (history||[]).forEach(function(h){h.log.forEach(function(l){l.sets.filter(function(s){return s.done&&s.weight>0;}).forEach(function(s){if(!prMap[l.exId]||s.weight>prMap[l.exId])prMap[l.exId]=s.weight;});});});
+
+  if(!active)return React.createElement(React.Fragment,null,
+    React.createElement("div",{className:"hdr"},React.createElement("h1",null,React.createElement("span",{className:"w"},"ACTIVE "),React.createElement("span",{className:"s"},"SESSION"))),
+    React.createElement("div",{className:"content"},React.createElement("div",{className:"empty"},React.createElement("div",{style:{fontSize:50,marginBottom:12}},"💤"),React.createElement("h3",null,"NO ACTIVE WORKOUT"),React.createElement("p",null,"Go to Workouts and start a session."),React.createElement("button",{className:"btn-ghost",style:{margin:"18px auto 0",display:"flex"},onClick:()=>onTab("workouts")},"Go to Workouts")))
+  );
+
+  if(completionData)return React.createElement(CompletionScreen,{data:completionData,history,exercises,onDone:function(){
+    setHistory(function(h){return[completionData,...h];});
+    setActive(null);setCompletionData(null);onTab("history");
+  }});
+
   const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
   const totalSets=active.log.reduce((a,e)=>a+e.sets.length,0);
   const doneSets=active.log.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0);
   const updateSet=(ei,si,f,v)=>setActive(a=>({...a,log:a.log.map((e,i)=>i!==ei?e:{...e,sets:e.sets.map((s,j)=>j!==si?s:{...s,[f]:v})})}));
   const addSet=ei=>setActive(a=>({...a,log:a.log.map((e,i)=>i!==ei?e:{...e,sets:[...e.sets,{reps:e.sets[e.sets.length-1]?.reps||10,weight:e.sets[e.sets.length-1]?.weight||0,done:false}]})}));
   const removeSet=(ei,si)=>setActive(a=>({...a,log:a.log.map((e,i)=>i!==ei?e:{...e,sets:e.sets.filter((_,j)=>j!==si)})}));
-  const finish=()=>{const dur=Math.floor((Date.now()-active.startedAt)/60000);setHistory(h=>[{id:uid(),workoutId:active.workoutId,workoutName:active.workoutName,muscleGroups:active.muscleGroups||[],date:new Date().toISOString(),duration:dur,log:active.log},...h]);setActive(null);onTab("history");showToast("Workout complete!");};
+
+  const toggleDone=(ei,si,exId,weight)=>{
+    var s=active.log[ei].sets[si];
+    var nowDone=!s.done;
+    updateSet(ei,si,"done",nowDone);
+    if(nowDone){
+      setRestTimer({remaining:restSecs,total:restSecs});
+      if(weight>0&&weight>(prMap[exId]||0))showToast("🏆 New PR! "+weight+" lbs!");
+    }
+  };
+
+  const finish=()=>{
+    var dur=Math.floor((Date.now()-active.startedAt)/60000);
+    setCompletionData({id:uid(),workoutId:active.workoutId,workoutName:active.workoutName,muscleGroups:active.muscleGroups||[],date:new Date().toISOString(),duration:dur,log:active.log});
+    setRestTimer(null);
+  };
+
   const pct=totalSets?Math.round((doneSets/totalSets)*100):0;
+  var restPct=restTimer?Math.round((restTimer.remaining/restTimer.total)*100):0;
+  var restDone=restTimer&&restTimer.remaining===0;
+
   return React.createElement(React.Fragment,null,
     React.createElement("div",{className:"hdr"},
       React.createElement("div",{className:"hdr-row"},
         React.createElement("div",null,React.createElement("h1",{style:{fontFamily:"var(--fh)",fontSize:20,letterSpacing:.3}},active.workoutName),React.createElement("div",{style:{color:"var(--muted)",fontSize:12,marginTop:2}},fmt(elapsed)," - ",doneSets,"/",totalSets," sets done")),
-        React.createElement("div",{style:{display:"flex",gap:6,alignItems:"center"}},React.createElement("span",{style:{padding:"5px 11px",borderRadius:8,border:"1px solid var(--border)",background:"var(--acc)",color:"#fff",fontSize:11,fontWeight:700}},"LBS"),React.createElement("button",{className:"btn-ghost",style:{color:"var(--danger)",borderColor:"var(--danger)",fontSize:12},onClick:()=>{setActive(null);showToast("Session discarded");}},"Discard"))
+        React.createElement("div",{style:{display:"flex",gap:6,alignItems:"center"}},
+          React.createElement("span",{style:{padding:"5px 11px",borderRadius:8,border:"1px solid var(--border)",background:"var(--acc)",color:"#fff",fontSize:11,fontWeight:700}},"LBS"),
+          React.createElement("button",{className:"btn-ghost",style:{color:"var(--danger)",borderColor:"var(--danger)",fontSize:12},onClick:()=>{setActive(null);showToast("Session discarded");}},"Discard"))
       ),
       React.createElement("div",{className:"prog-bar"},React.createElement("div",{className:"prog-fill",style:{width:pct+"%"}}))
     ),
     React.createElement("div",{className:"content"},
-      active.log.map(function(le, ei){
+      active.log.map(function(le,ei){
         var ex=exercises.find(function(x){return x.id===le.exId;});
-        if(!ex) return null;
+        if(!ex)return null;
         var allDone=le.sets.length>0&&le.sets.every(function(s){return s.done;});
+        var exPR=prMap[le.exId]||0;
         return React.createElement("div",{key:ei,className:"card",style:{border:"1px solid "+(allDone?"var(--acc)33":"var(--border)")}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:9,marginBottom:10}},
             React.createElement("span",{className:"ex-dot",style:{background:cc(ex.category),width:11,height:11}}),
             React.createElement("span",{style:{fontFamily:"var(--fh)",fontSize:17,letterSpacing:.3,flex:1}},ex.name),
-            allDone&&React.createElement("span",{style:{color:"var(--acc)",fontSize:11,fontWeight:700}},"DONE"),
+            exPR>0&&React.createElement("span",{style:{fontSize:10,color:"var(--muted)",fontWeight:600}},exPR+" lbs PR"),
+            allDone&&React.createElement("span",{style:{color:"var(--acc)",fontSize:11,fontWeight:700,marginLeft:4}},"✓ DONE"),
             React.createElement("button",{className:"btn-info",onClick:function(){return onDemo(ex.id);}},React.createElement(Ic.Info))
           ),
           React.createElement("div",{style:{display:"flex",gap:7,marginBottom:5,paddingLeft:26}},
             ["Reps","lbs"].map(function(l,i){return React.createElement("div",{key:i,style:{flex:1,textAlign:"center",fontSize:12,fontWeight:700,color:"var(--acc)",textTransform:"uppercase",letterSpacing:.5}},l);}),
-            React.createElement("div",{style:{width:30}}),
-            React.createElement("div",{style:{width:28}})
+            React.createElement("div",{style:{width:30}}),React.createElement("div",{style:{width:28}})
           ),
           le.sets.map(function(s,si){
+            var isPR=s.weight>0&&s.weight>exPR;
             return React.createElement("div",{key:si,className:"set-row"},
               React.createElement("div",{className:"set-num"},si+1),
-              React.createElement("input",{className:"set-inp",type:"number",value:s._repsEmpty?"":s.reps,min:0,placeholder:"0",style:s.done?{opacity:.7,textDecoration:"line-through"}:{},onChange:function(e){var v=e.target.value;if(v===""){updateSet(ei,si,"_repsEmpty",true);updateSet(ei,si,"reps",0);}else{updateSet(ei,si,"_repsEmpty",false);updateSet(ei,si,"reps",Number(v));}}}),React.createElement("input",{className:"set-inp",type:"number",value:s._weightEmpty?"":s.weight,min:0,step:.5,placeholder:"0",style:s.done?{opacity:.7,textDecoration:"line-through"}:{},onChange:function(e){var v=e.target.value;if(v===""){updateSet(ei,si,"_weightEmpty",true);updateSet(ei,si,"weight",0);}else{updateSet(ei,si,"_weightEmpty",false);updateSet(ei,si,"weight",Number(v));}}}),
-              React.createElement("button",{className:"set-chk"+(s.done?" done":""),onClick:function(){return updateSet(ei,si,"done",!s.done);}},React.createElement(Ic.Check)),
+              React.createElement("input",{className:"set-inp",type:"number",value:s._repsEmpty?"":s.reps,min:0,placeholder:"0",style:s.done?{opacity:.7,textDecoration:"line-through"}:{},onChange:function(e){var v=e.target.value;if(v===""){updateSet(ei,si,"_repsEmpty",true);updateSet(ei,si,"reps",0);}else{updateSet(ei,si,"_repsEmpty",false);updateSet(ei,si,"reps",Number(v));}}}),
+              React.createElement("div",{style:{flex:1,position:"relative"}},
+                React.createElement("input",{className:"set-inp",type:"number",value:s._weightEmpty?"":s.weight,min:0,step:.5,placeholder:"0",style:Object.assign({},s.done?{opacity:.7,textDecoration:"line-through"}:{},isPR?{borderColor:"var(--acc3)",color:"var(--acc3)"}:{}),onChange:function(e){var v=e.target.value;if(v===""){updateSet(ei,si,"_weightEmpty",true);updateSet(ei,si,"weight",0);}else{updateSet(ei,si,"_weightEmpty",false);updateSet(ei,si,"weight",Number(v));}}}),
+                isPR&&!s.done&&React.createElement("div",{style:{position:"absolute",top:-8,right:2,fontSize:8,fontWeight:800,color:"var(--acc3)",background:"var(--bg)",padding:"0 2px",lineHeight:1.2,pointerEvents:"none"}},"PR!")
+              ),
+              React.createElement("button",{className:"set-chk"+(s.done?" done":""),onClick:function(){return toggleDone(ei,si,le.exId,s.weight);}},React.createElement(Ic.Check)),
               React.createElement("button",{className:"btn-del",style:{width:24,height:24},onClick:function(){return removeSet(ei,si);}},React.createElement(Ic.Trash))
             );
           }),
@@ -1072,6 +1166,16 @@ function ActiveTab({active,setActive,exercises,setHistory,onTab,showToast,onDemo
         );
       }),
       React.createElement("button",{className:"btn-acc",onClick:finish,style:{marginTop:4}},React.createElement(Ic.Check)," FINISH WORKOUT")
+    ),
+    // ── Rest Timer Bar ─────────────────────────────────────────────
+    restTimer&&React.createElement("div",{style:{position:"fixed",bottom:62,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:restDone?"var(--acc3)":"var(--acc)",color:"#fff",padding:"10px 14px",display:"flex",alignItems:"center",gap:8,zIndex:19,boxShadow:"0 -3px 14px rgba(0,0,0,.18)"}},
+      React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:13,letterSpacing:.5,flexShrink:0}},restDone?"GO!":"REST"),
+      React.createElement("div",{style:{flex:1,height:4,background:"rgba(255,255,255,.3)",borderRadius:3,overflow:"hidden"}},
+        React.createElement("div",{style:{height:"100%",background:"#fff",borderRadius:3,width:restPct+"%",transition:"width 1s linear"}})
+      ),
+      React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:17,letterSpacing:.5,flexShrink:0,minWidth:36,textAlign:"center"}},restDone?"🔥":fmt(restTimer.remaining)),
+      [30,60,90].map(function(s){return React.createElement("button",{key:s,style:{background:"rgba(255,255,255,.2)",border:"none",color:"#fff",borderRadius:6,padding:"3px 6px",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0},onClick:function(){setRestSecs(s);setRestTimer({remaining:s,total:s});}},s+"s");}),
+      React.createElement("button",{style:{background:"rgba(255,255,255,.25)",border:"none",color:"#fff",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0},onClick:function(){setRestTimer(null);}},"Skip")
     )
   );
 }

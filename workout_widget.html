@@ -1077,6 +1077,63 @@ function CompletionScreen({data,history,exercises,onDone}) {
   );
 }
 
+// ─── PLATE CALCULATOR ────────────────────────────────────────────────────────
+function PlateCalc({onClose}) {
+  const [barW,setBarW]=useStorage("ww-barw",45);
+  const [target,setTarget]=useState("");
+  var PLATES=[45,35,25,10,5,2.5,1.25];
+  var BARS=[{l:"Olympic 45",v:45},{l:"Standard 35",v:35},{l:"EZ Bar 25",v:25},{l:"Fixed 15",v:15}];
+  var tgt=parseFloat(target)||0;
+  var sideLoad=tgt>barW?(tgt-barW)/2:0;
+  var result=[];
+  if(sideLoad>0){var rem=sideLoad;PLATES.forEach(function(ps){var cnt=Math.floor(rem/ps+0.0001);if(cnt>0){result.push({size:ps,count:cnt});rem-=cnt*ps;}});}
+  var loaded=result.reduce(function(a,p){return a+p.size*p.count*2;},0)+barW;
+  var feasible=tgt>0&&tgt>=barW;
+  var exact=feasible&&Math.abs(loaded-tgt)<0.1;
+  var plateColors={45:"#4CAF50",35:"#2196F3",25:"#9C27B0",10:"#F44336",5:"#FF9800",2.5:"#795548",1.25:"#607D8B"};
+  return React.createElement("div",{style:{position:"fixed",inset:0,zIndex:90,display:"flex",flexDirection:"column",justifyContent:"flex-end",background:"rgba(0,0,0,0.5)"},onClick:function(e){if(e.target===e.currentTarget)onClose();}},
+    React.createElement("div",{style:{background:"var(--card)",borderRadius:"20px 20px 0 0",padding:"20px 18px 36px",maxHeight:"82vh",overflowY:"auto",boxShadow:"0 -8px 32px rgba(0,0,0,0.25)"}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}},
+        React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:22,letterSpacing:.5}},"PLATE CALCULATOR"),
+        React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:20,color:"var(--muted)",lineHeight:1},onClick:onClose},"×")
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--muted)",letterSpacing:.5,marginBottom:5}},"BAR WEIGHT"),
+        React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
+          BARS.map(function(b){var on=barW===b.v;return React.createElement("button",{key:b.v,style:{flex:1,minWidth:70,padding:"7px 4px",borderRadius:8,border:"1.5px solid "+(on?"var(--acc)":"var(--border2)"),background:on?"var(--acc)":"transparent",color:on?"#fff":"var(--muted)",fontSize:11,fontWeight:700,cursor:"pointer"},onClick:function(){setBarW(b.v);}},b.l);})
+        )
+      ),
+      React.createElement("div",{style:{marginBottom:16}},
+        React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--muted)",letterSpacing:.5,marginBottom:5}},"TARGET WEIGHT (lbs)"),
+        React.createElement("input",{type:"number",min:barW,step:.5,value:target,placeholder:"e.g. 225",onChange:function(e){setTarget(e.target.value);},style:{width:"100%",padding:"11px 14px",borderRadius:10,border:"1.5px solid var(--border2)",background:"var(--s1)",color:"var(--text)",fontSize:18,fontFamily:"var(--fb)",boxSizing:"border-box",outline:"none"}})
+      ),
+      tgt>0&&React.createElement(React.Fragment,null,
+        !feasible&&React.createElement("div",{style:{color:"var(--danger)",fontSize:12,fontWeight:600,marginBottom:10}},"Target must be at least "+barW+" lbs (bar weight)."),
+        feasible&&React.createElement(React.Fragment,null,
+          React.createElement("div",{style:{background:"var(--s1)",borderRadius:12,padding:"12px 14px",marginBottom:14}},
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:result.length?10:0}},
+              React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--muted)",letterSpacing:.5}},"PLATES PER SIDE"),
+              React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:15,color:exact?"var(--success)":"var(--acc3)"}},exact?"= "+loaded+" lbs":"≈ "+loaded+" lbs")
+            ),
+            result.length===0
+              ?React.createElement("div",{style:{fontSize:13,color:"var(--muted)",fontStyle:"italic"}},"Bar only")
+              :result.map(function(p,i){return React.createElement("div",{key:i,style:{display:"flex",alignItems:"center",gap:10,marginBottom:6}},
+                React.createElement("div",{style:{width:36,height:36,borderRadius:6,background:plateColors[p.size]||"var(--acc)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:"#fff",flexShrink:0}},p.size),
+                React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,letterSpacing:.3}},p.count,"×"),
+                React.createElement("div",{style:{fontSize:12,color:"var(--muted)"}},p.size," lb plate"+(p.count>1?"s":""))
+              );})
+          ),
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--muted)",padding:"0 4px"}},
+            React.createElement("span",null,"Bar: ",barW," lbs"),
+            React.createElement("span",null,"Each side: ",sideLoad.toFixed(2)," lbs"),
+            React.createElement("span",null,"Total: ",loaded," lbs")
+          )
+        )
+      )
+    )
+  );
+}
+
 // ─── ACTIVE TAB ───────────────────────────────────────────────────────────────
 function ActiveTab({active,setActive,exercises,history,setHistory,onTab,showToast,onDemo,weightUnit,setWeightUnit}) {
   const [elapsed,setElapsed]=useState(0);
@@ -1085,6 +1142,7 @@ function ActiveTab({active,setActive,exercises,history,setHistory,onTab,showToas
   const [completionData,setCompletionData]=useState(null);
   const [notesMap,setNotesMap]=useState({});
   const [notesOpen,setNotesOpen]=useState({});
+  const [showPlates,setShowPlates]=useState(false);
 
   useEffect(()=>{if(!active)return;const iv=setInterval(()=>setElapsed(Math.floor((Date.now()-active.startedAt)/1000)),1000);return()=>clearInterval(iv);},[active]);
 
@@ -1143,6 +1201,7 @@ function ActiveTab({active,setActive,exercises,history,setHistory,onTab,showToas
         React.createElement("div",null,React.createElement("h1",{style:{fontFamily:"var(--fh)",fontSize:20,letterSpacing:.3}},active.workoutName),React.createElement("div",{style:{color:"var(--muted)",fontSize:12,marginTop:2}},fmt(elapsed)," - ",doneSets,"/",totalSets," sets done")),
         React.createElement("div",{style:{display:"flex",gap:6,alignItems:"center"}},
           React.createElement("span",{style:{padding:"5px 11px",borderRadius:8,border:"1px solid var(--border)",background:"var(--acc)",color:"#fff",fontSize:11,fontWeight:700}},"LBS"),
+          React.createElement("button",{className:"btn-ghost",style:{fontSize:11,padding:"5px 9px"},title:"Plate Calculator",onClick:function(){setShowPlates(true);}},"🔢 Plates"),
           React.createElement("button",{className:"btn-ghost",style:{color:"var(--danger)",borderColor:"var(--danger)",fontSize:12},onClick:()=>{setActive(null);showToast("Session discarded");}},"Discard"))
       ),
       React.createElement("div",{className:"prog-bar"},React.createElement("div",{className:"prog-fill",style:{width:pct+"%"}}))
@@ -1205,7 +1264,8 @@ function ActiveTab({active,setActive,exercises,history,setHistory,onTab,showToas
       React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:17,letterSpacing:.5,flexShrink:0,minWidth:36,textAlign:"center"}},restDone?"🔥":fmt(restTimer.remaining)),
       [30,60,90].map(function(s){return React.createElement("button",{key:s,style:{background:"rgba(255,255,255,.2)",border:"none",color:"#fff",borderRadius:6,padding:"3px 6px",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0},onClick:function(){setRestSecs(s);setRestTimer({remaining:s,total:s});}},s+"s");}),
       React.createElement("button",{style:{background:"rgba(255,255,255,.25)",border:"none",color:"#fff",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0},onClick:function(){setRestTimer(null);}},"Skip")
-    )
+    ),
+    showPlates&&React.createElement(PlateCalc,{onClose:function(){setShowPlates(false);}})
   );
 }
 
@@ -1298,7 +1358,37 @@ function TrendView({history,exercises}) {
               React.createElement("span",{style:{fontFamily:"var(--fh)",fontSize:14,color:"var(--acc)",marginRight:6}},item.count,"×"),
               React.createElement("span",{style:{color:"var(--muted)",fontSize:18,lineHeight:1}},">")
             );})
-          )
+          ),
+          (function(){
+            var PUSH_C=["Chest","Shoulders","Triceps"],PULL_C=["Back","Biceps"],LEG_C=["Legs"],CORE_C=["Core"];
+            var bm={Push:0,Pull:0,Legs:0,Core:0,Other:0};
+            filtH.forEach(function(h){h.log.forEach(function(l){var ex=exercises.find(function(x){return x.id===l.exId;});if(!ex)return;var ds=l.sets.filter(function(s){return s.done;}).length;var k=PUSH_C.includes(ex.category)?"Push":PULL_C.includes(ex.category)?"Pull":LEG_C.includes(ex.category)?"Legs":CORE_C.includes(ex.category)?"Core":"Other";bm[k]+=ds;});});
+            var tot=Object.values(bm).reduce(function(a,v){return a+v;},0);
+            if(!tot)return null;
+            var entries=Object.entries(bm).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];});
+            var balColors={Push:"var(--acc)",Pull:"var(--acc2)",Legs:"#22CC66",Core:"var(--acc3)",Other:"var(--dim)"};
+            var ratio=bm.Push&&bm.Pull?(bm.Push/bm.Pull).toFixed(1):null;
+            return React.createElement(React.Fragment,null,
+              React.createElement("div",{className:"sec",style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+                React.createElement("span",null,"MUSCLE BALANCE"),
+                ratio&&React.createElement("span",{style:{fontSize:11,color:"var(--muted)",fontWeight:600}},"Push:Pull "+ratio+":1")
+              ),
+              React.createElement("div",{className:"card2",style:{marginBottom:14,padding:"14px 14px 10px"}},
+                entries.map(function(e){
+                  var pct=Math.round((e[1]/tot)*100);
+                  return React.createElement("div",{key:e[0],style:{marginBottom:8}},
+                    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:3,fontSize:11,fontWeight:700}},
+                      React.createElement("span",{style:{color:balColors[e[0]]||"var(--acc)"}},e[0].toUpperCase()),
+                      React.createElement("span",{style:{color:"var(--muted)"}},e[1]," sets · ",pct,"%")
+                    ),
+                    React.createElement("div",{style:{height:7,borderRadius:4,background:"var(--s2)",overflow:"hidden"}},
+                      React.createElement("div",{style:{height:"100%",width:pct+"%",background:balColors[e[0]]||"var(--acc)",borderRadius:4,transition:"width .5s ease"}})
+                    )
+                  );
+                })
+              )
+            );
+          })()
         )
     );
   }

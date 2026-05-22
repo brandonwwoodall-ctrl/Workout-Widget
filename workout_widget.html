@@ -1667,23 +1667,24 @@ function SwipeCard({onDelete,children,resetSignal}) {
       React.createElement("span",{style:{color:"#fff",fontSize:20}},"🗑")
     ),
     React.createElement("div",{style:{transform:"translateX("+offset+"px)",transition:dragging?"none":"transform 0.22s ease",willChange:"transform",touchAction:"pan-y"},
-      onTouchStart,onTouchMove,onTouchEnd,onClick:offset!==0?function(e){e.stopPropagation();reset();}:undefined},
+      onTouchStart:onTouchStart,onTouchMove:onTouchMove,onTouchEnd:onTouchEnd,onClick:offset!==0?function(e){e.stopPropagation();reset();}:undefined},
       children
     )
   );
 }
 
+
 function HistoryTab({history,setHistory,exercises,onProgress}) {
-  const [histView,   setHistView]   = useState("history"); // "history" | "trends"
-  const [swipeReset,setSwipeReset]=useState(0);
+  const [histView,   setHistView]   = useState("history"); // "history" | "trends" | "badges"
   const [delConfirm, setDelConfirm] = useState(null);
   const [clearAll,   setClearAll]   = useState(false);
+  const [swipeReset, setSwipeReset] = useState(0);
   const [favPRs,     setFavPRs]     = useStorage("ww-pr-fav", []);
   const [prView,     setPrView]     = useState(false);   // false | "all"
-  const [histDrill,  setHistDrill]  = useState(null);    // null | workoutName
+  const [histDrill,  setHistDrill]  = useState(null);    // null | workoutName string
 
-  const totalW=history.length,totalS=history.reduce((a,h)=>a+h.log.reduce((b,e)=>b+e.sets.filter(s=>s.done).length,0),0),totalT=history.reduce((a,h)=>a+(h.duration||0),0);
-  const fmt=iso=>{const d=new Date(iso);return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
+  const totalW=history.length,totalS=history.reduce(function(a,h){return a+h.log.reduce(function(b,e){return b+e.sets.filter(function(s){return s.done;}).length;},0);},0),totalT=history.reduce(function(a,h){return a+(h.duration||0);},0);
+  const fmt=function(iso){var d=new Date(iso);return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
 
   // Current workout streak (consecutive days with at least one workout)
   const streak=(function(){
@@ -1698,13 +1699,13 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
 
   // Compute PRs: best single-set weight for each exercise
   const prMap = {};
-  history.forEach(h=>h.log.forEach(le=>{le.sets.filter(s=>s.done&&s.weight>0).forEach(s=>{if(!prMap[le.exId]||s.weight>prMap[le.exId])prMap[le.exId]=s.weight;});}));
-  const prList = Object.entries(prMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,w])=>({ex:exercises.find(x=>x.id===id),w})).filter(x=>x.ex);
+  history.forEach(function(h){h.log.forEach(function(le){le.sets.filter(function(s){return s.done&&s.weight>0;}).forEach(function(s){if(!prMap[le.exId]||s.weight>prMap[le.exId])prMap[le.exId]=s.weight;});});});
+  const prList = Object.entries(prMap).sort(function(a,b){return b[1]-a[1];}).slice(0,5).map(function(e){var ex=exercises.find(function(x){return x.id===e[0];});return ex?{ex:ex,w:e[1]}:null;}).filter(Boolean);
 
-  const confirmDeleteSession = () => { setHistory(h=>h.filter(x=>x.id!==delConfirm.id)); setDelConfirm(null); };
-  const confirmClearAll = () => { setHistory([]); setClearAll(false); };
+  const confirmDeleteSession = function(){setHistory(function(h){return h.filter(function(x){return x.id!==delConfirm.id;});});setDelConfirm(null);};
+  const confirmClearAll = function(){setHistory([]);setClearAll(false);};
 
-  const deleteModal = (show, title, body, onConfirm, onCancel) => show && React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
+  const deleteModal = function(show, title, body, onConfirm, onCancel){return show && React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
     React.createElement("div",{style:{background:"var(--card)",border:"2px solid #CC1A2A",borderRadius:16,padding:"28px 24px 20px",maxWidth:340,width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}},
       React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"#CC1A2A",marginBottom:10,textAlign:"center"}},title),
       React.createElement("div",{style:{fontSize:14,color:"var(--text)",textAlign:"center",marginBottom:22}},body),
@@ -1713,15 +1714,107 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
         React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"none",background:"#CC1A2A",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:onConfirm},"Yes, Delete")
       )
     )
-  );
+  );};
 
   var SegCtrl=React.createElement("div",{style:{display:"flex",background:"var(--s2)",borderRadius:10,padding:3,marginTop:8}},
     ["history","trends","badges"].map(function(v){var on=histView===v;return React.createElement("button",{key:v,style:{flex:1,padding:"7px 0",borderRadius:8,border:"none",background:on?"var(--card)":"transparent",color:on?"var(--acc)":"var(--muted)",fontWeight:700,fontSize:12,cursor:"pointer",boxShadow:on?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all .2s",letterSpacing:.5},onClick:function(){setHistView(v);}},v.toUpperCase());})
   );
 
+  // ── Build PR section content ─────────────────────────────────────────────
+  var prContent;
+  if(prView==="all") {
+    var allPRs=Object.entries(prMap).map(function(e){var ex=exercises.find(function(x){return x.id===e[0];});return ex?{ex:ex,w:e[1]}:null;}).filter(Boolean).sort(function(a,b){return b.w-a.w;});
+    prContent=React.createElement(React.Fragment,null,
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:14}},
+        React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",color:"var(--acc)",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:5,padding:0},onClick:function(){setPrView(false);}},React.createElement(Ic.Back)," Back"),
+        React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,flex:1,letterSpacing:.5}},"ALL PERSONAL RECORDS")
+      ),
+      allPRs.length===0&&React.createElement("div",{className:"empty"},React.createElement("p",null,"No PR data yet.")),
+      allPRs.map(function(item){
+        var isFav=favPRs.indexOf(item.ex.id)>=0;
+        return React.createElement("div",{key:item.ex.id,className:"pr-card",style:{cursor:"pointer",alignItems:"center"}},
+          React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:18,padding:"0 4px 0 0",lineHeight:1,flexShrink:0},title:isFav?"Unfavorite":"Favorite",onClick:function(e){e.stopPropagation();var id=item.ex.id;setFavPRs(function(f){return isFav?f.filter(function(x){return x!==id;}):f.concat([id]);});}},isFav?"⭐":"☆"),
+          React.createElement("div",{className:"pr-icon",style:{background:cc(item.ex.category)+"22"}},"🏆"),
+          React.createElement("div",{style:{flex:1,minWidth:0},onClick:function(){onProgress(item.ex.id);}},
+            React.createElement("div",{style:{fontWeight:600,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},item.ex.name),
+            React.createElement("div",{style:{fontSize:10,color:"var(--muted)"}},item.ex.category)
+          ),
+          React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:20,color:"var(--acc)",letterSpacing:.5},onClick:function(){onProgress(item.ex.id);}},item.w," lbs")
+        );
+      })
+    );
+  } else {
+    var displayPRs=favPRs.length>0
+      ?Object.entries(prMap).map(function(e){var ex=exercises.find(function(x){return x.id===e[0];});return ex?{ex:ex,w:e[1]}:null;}).filter(function(x){return x&&favPRs.indexOf(x.ex.id)>=0;}).sort(function(a,b){return b.w-a.w;})
+      :prList;
+    prContent=React.createElement(React.Fragment,null,
+      displayPRs.length>0&&React.createElement(React.Fragment,null,
+        React.createElement("div",{className:"sec",style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+          React.createElement("span",{style:{display:"flex",alignItems:"center",gap:6}},React.createElement(Ic.Trophy)," ",favPRs.length>0?"FAVORITE PRs":"PERSONAL RECORDS"),
+          React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"var(--acc)",background:"none",border:"1.5px solid var(--acc)",borderRadius:8,padding:"3px 10px",cursor:"pointer"},onClick:function(){setPrView("all");}},"VIEW ALL")
+        ),
+        displayPRs.map(function(item){return React.createElement("div",{key:item.ex.id,className:"pr-card",onClick:function(){onProgress(item.ex.id);},style:{cursor:"pointer"}},
+          React.createElement("div",{className:"pr-icon",style:{background:cc(item.ex.category)+"22"}},"⭐"),
+          React.createElement("div",{style:{flex:1,minWidth:0}},React.createElement("div",{style:{fontWeight:600,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},item.ex.name),React.createElement("div",{style:{fontSize:10,color:"var(--muted)"}},item.ex.category)),
+          React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:20,color:"var(--acc)",letterSpacing:.5}},item.w," lbs")
+        );}),
+        prList.length>0&&favPRs.length===0&&React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"var(--acc)",background:"none",border:"none",cursor:"pointer",padding:"0 0 8px",display:"block"},onClick:function(){setPrView("all");}},"⭐ Star favorites to pin them here →")
+      ),
+      prList.length>0&&favPRs.length===0&&React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"var(--acc2)",background:"none",border:"1.5px solid var(--acc2)",borderRadius:8,padding:"3px 10px",cursor:"pointer",marginBottom:12},onClick:function(){setPrView("all");}},"🏆 View all "+Object.keys(prMap).length+" PRs")
+    );
+  }
+
+  // ── Build history list content ────────────────────────────────────────────
+  var histContent;
+  if(history.length===0) {
+    histContent=React.createElement("div",{className:"empty"},React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📊"),React.createElement("h3",null,"NO HISTORY YET"),React.createElement("p",null,"Complete your first workout to see progress here."));
+  } else if(histDrill===null) {
+    var wGroups={};
+    history.forEach(function(h){if(!wGroups[h.workoutName])wGroups[h.workoutName]={name:h.workoutName,sessions:[],muscleGroups:h.muscleGroups||[]};wGroups[h.workoutName].sessions.push(h);});
+    var grouped=Object.values(wGroups).sort(function(a,b){return new Date(b.sessions[0].date)-new Date(a.sessions[0].date);});
+    histContent=React.createElement(React.Fragment,null,
+      React.createElement("div",{className:"sec",style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+        React.createElement("span",null,"BY WORKOUT"),
+        React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"#CC1A2A",background:"none",border:"1.5px solid #CC1A2A",borderRadius:8,padding:"3px 10px",cursor:"pointer"},onClick:function(){setClearAll(true);}},"Clear All")
+      ),
+      grouped.map(function(g){
+        var last=g.sessions[0];
+        return React.createElement("div",{key:g.name,className:"hist-card",style:{cursor:"pointer"},onClick:function(){setHistDrill(g.name);}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+            React.createElement("div",{style:{flex:1,minWidth:0}},
+              React.createElement("div",{className:"hist-title"},g.name),
+              React.createElement("div",{className:"hist-date"},g.sessions.length," session"+(g.sessions.length===1?"":"s")+" · last "+fmt(last.date))
+            ),
+            g.muscleGroups.length>0&&React.createElement("div",{style:{display:"flex",gap:4,flexShrink:0}},g.muscleGroups.slice(0,3).map(function(mg){return React.createElement("span",{key:mg,style:{width:9,height:9,borderRadius:"50%",background:cc(mg),display:"inline-block"}});})),
+            React.createElement("div",{style:{color:"var(--muted)",fontSize:18,lineHeight:1,marginLeft:4}},">")
+          )
+        );
+      })
+    );
+  } else {
+    var drillSessions=history.filter(function(h){return h.workoutName===histDrill;});
+    histContent=React.createElement(React.Fragment,null,
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+        React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",color:"var(--acc)",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:5,padding:0},onClick:function(){setHistDrill(null);}},React.createElement(Ic.Back)," All Workouts"),
+        React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:16,flex:1,letterSpacing:.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},histDrill)
+      ),
+      drillSessions.map(function(h){
+        var exS=h.log.map(function(le){var ex=exercises.find(function(x){return x.id===le.exId;});var d=le.sets.filter(function(s){return s.done;});return ex?ex.name+" - "+d.length+"x":null;}).filter(Boolean);
+        var grps=h.muscleGroups||[];
+        return React.createElement(SwipeCard,{key:h.id,onDelete:function(){setDelConfirm({id:h.id,name:h.workoutName+" on "+fmt(h.date)});},resetSignal:swipeReset},
+          React.createElement("div",{className:"hist-card",style:{marginBottom:0}},
+            React.createElement("div",{className:"hist-title"},fmt(h.date)," · ",h.duration||0," min"),
+            grps.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}},grps.map(function(g){return React.createElement("span",{key:g,className:"mpill",style:{color:"#fff",borderColor:cc(g),background:cc(g),fontSize:11}},g);})),
+            exS.map(function(s,i){return React.createElement("div",{key:i,className:"hist-ex"},"- ",s);})
+          )
+        );
+      })
+    );
+  }
+
   return React.createElement(React.Fragment,null,
-    deleteModal(!!delConfirm,"DELETE SESSION","This session will be permanently removed from your history.",confirmDeleteSession,function(){setDelConfirm(null);setSwipeReset(function(r){return r+1;});}),
-    deleteModal(clearAll,"CLEAR ALL HISTORY","All workout sessions will be permanently deleted. This cannot be undone.",confirmClearAll,()=>setClearAll(false)),
+    deleteModal(!!delConfirm,"DELETE SESSION","This session will be permanently removed from your history.",confirmDeleteSession,function(){setDelConfirm(null);setSwipeReset(function(r){return r+1;}); }),
+    deleteModal(clearAll,"CLEAR ALL HISTORY","All workout sessions will be permanently deleted. This cannot be undone.",confirmClearAll,function(){setClearAll(false);}),
     React.createElement("div",{className:"hdr"},React.createElement("h1",null,React.createElement("span",{className:"w"},"WORKOUT "),React.createElement("span",{className:"s"},"HISTORY")),SegCtrl),
     React.createElement("div",{className:"content"},
       histView==="trends"&&React.createElement(TrendView,{history:history,exercises:exercises}),
@@ -1739,100 +1832,13 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
         React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalS),React.createElement("div",{className:"stat-lbl"},"Sets Done")),
         React.createElement("div",{className:"stat-box"},React.createElement("div",{className:"stat-val"},totalT),React.createElement("div",{className:"stat-lbl"},"Minutes"))
       ),
-      (function(){
-        // Full PR view
-        if(prView==="all"){
-          var allPRs=Object.entries(prMap).map(function(e){var ex=exercises.find(function(x){return x.id===e[0];});return ex?{ex:ex,w:e[1]}:null;}).filter(Boolean).sort(function(a,b){return b.w-a.w;});
-          return React.createElement(React.Fragment,null,
-            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:14}},
-              React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",color:"var(--acc)",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:5,padding:0},onClick:function(){setPrView(false);}},React.createElement(Ic.Back)," Back"),
-              React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,flex:1,letterSpacing:.5}},"ALL PERSONAL RECORDS")
-            ),
-            allPRs.length===0&&React.createElement("div",{className:"empty"},React.createElement("p",null,"No PR data yet.")),
-            allPRs.map(function(item){
-              var isFav=favPRs.includes(item.ex.id);
-              return React.createElement("div",{key:item.ex.id,className:"pr-card",style:{cursor:"pointer",alignItems:"center"}},
-                React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:18,padding:"0 4px 0 0",lineHeight:1,flexShrink:0},title:isFav?"Unfavorite":"Favorite",onClick:function(e){e.stopPropagation();setFavPRs(function(f){return isFav?f.filter(function(id){return id!==item.ex.id;}):[...f,item.ex.id];});}},isFav?"⭐":"☆"),
-                React.createElement("div",{className:"pr-icon",style:{background:cc(item.ex.category)+"22"}},"🏆"),
-                React.createElement("div",{style:{flex:1,minWidth:0},onClick:function(){onProgress(item.ex.id);}},
-                  React.createElement("div",{style:{fontWeight:600,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},item.ex.name),
-                  React.createElement("div",{style:{fontSize:10,color:"var(--muted)"}},item.ex.category)
-                ),
-                React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:20,color:"var(--acc)",letterSpacing:.5},onClick:function(){onProgress(item.ex.id);}},item.w," lbs")
-              );
-            })
-          );
-        }
-        // Main view PR section
-        var displayPRs=favPRs.length>0
-          ?Object.entries(prMap).map(function(e){var ex=exercises.find(function(x){return x.id===e[0];});return ex?{ex:ex,w:e[1]}:null;}).filter(function(x){return x&&favPRs.includes(x.ex.id);}).sort(function(a,b){return b.w-a.w;})
-          :prList;
-        return React.createElement(React.Fragment,null,
-          displayPRs.length>0&&React.createElement(React.Fragment,null,
-            React.createElement("div",{className:"sec",style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
-              React.createElement("span",{style:{display:"flex",alignItems:"center",gap:6}},React.createElement(Ic.Trophy)," ",favPRs.length>0?"FAVORITE PRs":"PERSONAL RECORDS"),
-              React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"var(--acc)",background:"none",border:"1.5px solid var(--acc)",borderRadius:8,padding:"3px 10px",cursor:"pointer"},onClick:function(){setPrView("all");}},"VIEW ALL")
-            ),
-            displayPRs.map(function(item){return React.createElement("div",{key:item.ex.id,className:"pr-card",onClick:function(){onProgress(item.ex.id);},style:{cursor:"pointer"}},
-              React.createElement("div",{className:"pr-icon",style:{background:cc(item.ex.category)+"22"}},"⭐"),
-              React.createElement("div",{style:{flex:1,minWidth:0}},React.createElement("div",{style:{fontWeight:600,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},item.ex.name),React.createElement("div",{style:{fontSize:10,color:"var(--muted)"}},item.ex.category)),
-              React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:20,color:"var(--acc)",letterSpacing:.5}},item.w," lbs")
-            );}),
-            prList.length>0&&favPRs.length===0&&React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"var(--acc)",background:"none",border:"none",cursor:"pointer",padding:"0 0 8px",display:"block"},onClick:function(){setPrView("all");}},"⭐ Star favorites to pin them here →")
-          ),
-          prList.length>0&&favPRs.length===0&&React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"var(--acc2)",background:"none",border:"1.5px solid var(--acc2)",borderRadius:8,padding:"3px 10px",cursor:"pointer",marginBottom:12},onClick:function(){setPrView("all");}},"🏆 View all "+Object.keys(prMap).length+" PRs"),
-          history.length===0
-            ?React.createElement("div",{className:"empty"},React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📊"),React.createElement("h3",null,"NO HISTORY YET"),React.createElement("p",null,"Complete your first workout to see progress here."))
-            :(function(){
-              // Grouped by workout name
-              if(histDrill===null){
-                var groups={};
-                history.forEach(function(h){if(!groups[h.workoutName])groups[h.workoutName]={name:h.workoutName,sessions:[],muscleGroups:h.muscleGroups||[]};groups[h.workoutName].sessions.push(h);});
-                var grouped=Object.values(groups).sort(function(a,b){return new Date(b.sessions[0].date)-new Date(a.sessions[0].date);});
-                return React.createElement(React.Fragment,null,
-                  React.createElement("div",{className:"sec",style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
-                    React.createElement("span",null,"BY WORKOUT"),
-                    React.createElement("button",{style:{fontSize:11,fontWeight:700,color:"#CC1A2A",background:"none",border:"1.5px solid #CC1A2A",borderRadius:8,padding:"3px 10px",cursor:"pointer"},onClick:function(){setClearAll(true);}},"Clear All")
-                  ),
-                  grouped.map(function(g){
-                    var last=g.sessions[0];
-                    return React.createElement("div",{key:g.name,className:"hist-card",style:{cursor:"pointer"},onClick:function(){setHistDrill(g.name);}},
-                      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
-                        React.createElement("div",{style:{flex:1,minWidth:0}},
-                          React.createElement("div",{className:"hist-title"},g.name),
-                          React.createElement("div",{className:"hist-date"},g.sessions.length," session"+(g.sessions.length===1?"":"s")+" · last "+fmt(last.date))
-                        ),
-                        g.muscleGroups.length>0&&React.createElement("div",{style:{display:"flex",gap:4,flexShrink:0}},g.muscleGroups.slice(0,3).map(function(mg){return React.createElement("span",{key:mg,style:{width:9,height:9,borderRadius:"50%",background:cc(mg),display:"inline-block"}})})),
-                        React.createElement("div",{style:{color:"var(--muted)",fontSize:18,lineHeight:1,marginLeft:4}},">")
-                      )
-                    );
-                  })
-                );
-              }
-              // Drill-down: sessions for one workout
-              var drillSessions=history.filter(function(h){return h.workoutName===histDrill;});
-              return React.createElement(React.Fragment,null,
-                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
-                  React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",color:"var(--acc)",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:5,padding:0},onClick:function(){setHistDrill(null);}},React.createElement(Ic.Back)," All Workouts"),
-                  React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:16,flex:1,letterSpacing:.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},histDrill)
-                ),
-                drillSessions.map(function(h){
-                  var exS=h.log.map(function(le){var ex=exercises.find(function(x){return x.id===le.exId;});var d=le.sets.filter(function(s){return s.done;});return ex?ex.name+" - "+d.length+"x":null;}).filter(Boolean);
-                  var groups=h.muscleGroups||[];
-                  return React.createElement(SwipeCard,{key:h.id,onDelete:function(){setDelConfirm({id:h.id,name:h.workoutName+" on "+fmt(h.date)});},resetSignal:swipeReset},
-                    React.createElement("div",{className:"hist-card",style:{marginBottom:0}},
-                      React.createElement("div",{className:"hist-title"},fmt(h.date)," · ",h.duration||0," min"),
-                      groups.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}},groups.map(function(g){return React.createElement("span",{key:g,className:"mpill",style:{color:"#fff",borderColor:cc(g),background:cc(g),fontSize:11}},g);})),
-                      exS.map(function(s,i){return React.createElement("div",{key:i,className:"hist-ex"},"- ",s);})
-                    )
-                  );
-                })
-              );
-            })()
+      prContent,
+      histContent
       )
     )
   );
 }
+
 
 // ─── PROGRESS SCREEN ─────────────────────────────────────────────────────────
 function ProgressScreen({exId,exercises,history,setHistory,onClose}) {

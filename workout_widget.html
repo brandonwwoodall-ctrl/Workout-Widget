@@ -114,15 +114,21 @@ const DEFAULT_WORKOUTS = [{"id":"wo_shoulders","name":"Shoulders","muscleGroups"
 const PROGRAM_TEMPLATES = [
   {
     id:"ppl", name:"Push Pull Legs", emoji:"🔥", duration:"6 days/week", level:"Intermediate",
-    description:"Classic PPL split. Push on Mon/Thu, Pull on Tue/Fri, Legs on Wed/Sat.",
+    description:"Classic PPL split — 6 workouts covering Push/Pull/Legs twice per week. A days are strength-focused (heavier, lower reps); B days are hypertrophy-focused (lighter, higher volume). Run Mon Push A · Tue Pull A · Wed Leg A · Thu Push B · Fri Pull B · Sat Leg B.",
     color:"#FF6B35",
     workouts:[
-      { name:"Push Day A", muscleGroups:["Chest","Shoulders","Triceps"], goal:"Hypertrophy",
-        exercises:[{id:"e_flatpyram",sets:4,reps:8,weight:60},{id:"e_dbbench",sets:3,reps:10,weight:30},{id:"bh927o8",sets:3,reps:10,weight:25},{id:"e_milpress",sets:3,reps:10,weight:20},{id:"e2_cgbench",sets:3,reps:10,weight:40},{id:"t_tricerope",sets:3,reps:12,weight:15},{id:"t_pardips",sets:3,reps:10,weight:0}]},
-      { name:"Pull Day A", muscleGroups:["Back","Biceps"], goal:"Hypertrophy",
-        exercises:[{id:"e_pullup",sets:4,reps:8,weight:0},{id:"e2_chinup",sets:3,reps:8,weight:0},{id:"e2_tbarrow",sets:3,reps:10,weight:50},{id:"bb_cablerows",sets:3,reps:10,weight:45},{id:"bb_straightlat",sets:3,reps:12,weight:30},{id:"e2_hammer",sets:3,reps:12,weight:15},{id:"bb_spider",sets:3,reps:12,weight:10}]},
+      { name:"Push Day A", muscleGroups:["Chest","Shoulders","Triceps"], goal:"Strength",
+        exercises:[{id:"e_flatpyram",sets:4,reps:6,weight:80},{id:"bh927o8",sets:4,reps:8,weight:50},{id:"e_ohpress",sets:4,reps:6,weight:50},{id:"e2_cgbench",sets:3,reps:8,weight:50},{id:"e2_cablat",sets:3,reps:12,weight:10},{id:"t_pardips",sets:3,reps:10,weight:0},{id:"t_skull",sets:3,reps:10,weight:25}]},
+      { name:"Pull Day A", muscleGroups:["Back","Biceps"], goal:"Strength",
+        exercises:[{id:"e_pullup",sets:4,reps:6,weight:0},{id:"e2_pendlay",sets:4,reps:6,weight:70},{id:"e2_tbarrow",sets:3,reps:8,weight:60},{id:"e_latpull",sets:3,reps:10,weight:55},{id:"e2_facepull",sets:3,reps:15,weight:20},{id:"e_biccurl",sets:3,reps:8,weight:20},{id:"e2_hammer",sets:3,reps:10,weight:15}]},
       { name:"Leg Day A", muscleGroups:["Legs","Core"], goal:"Strength",
-        exercises:[{id:"e_squat",sets:4,reps:6,weight:80},{id:"e_deadlift",sets:3,reps:5,weight:100},{id:"e2_romdead",sets:3,reps:10,weight:70},{id:"e2_hipthrust",sets:3,reps:12,weight:80},{id:"e2_bss",sets:3,reps:10,weight:20},{id:"e_calfr",sets:4,reps:15,weight:0},{id:"e2_sideplank",sets:3,reps:30,weight:0}]},
+        exercises:[{id:"e_squat",sets:4,reps:5,weight:100},{id:"e_deadlift",sets:3,reps:4,weight:120},{id:"e2_romdead",sets:3,reps:8,weight:80},{id:"e2_hipthrust",sets:4,reps:8,weight:90},{id:"e2_bss",sets:3,reps:8,weight:25},{id:"e_calfr",sets:4,reps:12,weight:0},{id:"ch_plank",sets:3,reps:45,weight:0}]},
+      { name:"Push Day B", muscleGroups:["Chest","Shoulders","Triceps"], goal:"Hypertrophy",
+        exercises:[{id:"e_dbbench",sets:4,reps:12,weight:30},{id:"e_declinedb",sets:3,reps:10,weight:25},{id:"e_milpress",sets:3,reps:12,weight:15},{id:"e2_cablat",sets:4,reps:15,weight:8},{id:"e_dbfly",sets:3,reps:15,weight:12},{id:"t_ohcabext",sets:3,reps:15,weight:12},{id:"e_tricdip",sets:3,reps:15,weight:0}]},
+      { name:"Pull Day B", muscleGroups:["Back","Biceps"], goal:"Hypertrophy",
+        exercises:[{id:"e2_chinup",sets:4,reps:10,weight:0},{id:"bb_cablerows",sets:4,reps:12,weight:45},{id:"bb_straightlat",sets:3,reps:15,weight:25},{id:"e2_rearfly",sets:4,reps:15,weight:10},{id:"e2_incdbcurl",sets:3,reps:12,weight:12},{id:"e2_concurl",sets:3,reps:12,weight:10},{id:"bb_spider",sets:3,reps:15,weight:8}]},
+      { name:"Leg Day B", muscleGroups:["Legs","Core"], goal:"Hypertrophy",
+        exercises:[{id:"e_legpress",sets:4,reps:15,weight:100},{id:"e2_hacksquat",sets:3,reps:12,weight:60},{id:"e2_bss",sets:3,reps:12,weight:20},{id:"leg_legext",sets:3,reps:15,weight:25},{id:"e2_legcurl",sets:3,reps:15,weight:25},{id:"e2_hipthrust",sets:3,reps:15,weight:70},{id:"leg_seatedcalf",sets:4,reps:20,weight:30}]},
     ]
   },
   {
@@ -140,7 +146,7 @@ const PROGRAM_TEMPLATES = [
   },
   {
     id:"fivex5", name:"StrongLifts 5x5", emoji:"🏋️", duration:"3 days/week", level:"Beginner",
-    description:"Simple, proven strength program. Squat every session, add weight each workout.",
+    description:"Simplest effective strength program. Alternate Workout A and B each session (A·B·A one week, B·A·B the next). Add 2.5 kg to upper lifts and 5 kg to squat/deadlift every session until you stall.",
     color:"#E8FF47",
     workouts:[
       { name:"Workout A", muscleGroups:["Legs","Chest","Back"], goal:"Strength",
@@ -188,6 +194,35 @@ const PROGRAM_TEMPLATES = [
         exercises:[{id:"e2_battleropes",sets:5,reps:20,weight:0},{id:"e2_plyopushup",sets:4,reps:10,weight:0},{id:"e2_burpee",sets:3,reps:8,weight:0},{id:"e2_kettleswing",sets:4,reps:15,weight:20},{id:"ch_mountainclimb",sets:3,reps:30,weight:0}]},
     ]
   },
+,
+  {
+    id:"brosplit", name:"Bro Split", emoji:"🦾", duration:"5 days/week", level:"Intermediate",
+    description:"Classic 5-day body-part split — one muscle group per day, maximum volume per session. Mon Chest · Tue Back · Wed Shoulders · Thu Arms · Fri Legs.",
+    color:"#E63946",
+    workouts:[
+      { name:"Chest Day", muscleGroups:["Chest"], goal:"Hypertrophy",
+        exercises:[{id:"e_flatpyram",sets:4,reps:8,weight:80},{id:"bh927o8",sets:4,reps:10,weight:50},{id:"e_declinedb",sets:3,reps:10,weight:40},{id:"e_dbbench",sets:3,reps:12,weight:30},{id:"e_dbfly",sets:3,reps:15,weight:15},{id:"e_hicabfly",sets:3,reps:15,weight:15},{id:"ch_pushup",sets:2,reps:20,weight:0}]},
+      { name:"Back Day", muscleGroups:["Back"], goal:"Hypertrophy",
+        exercises:[{id:"e_deadlift",sets:4,reps:5,weight:100},{id:"e_pullup",sets:4,reps:8,weight:0},{id:"bb_bbrow",sets:4,reps:8,weight:70},{id:"e2_tbarrow",sets:3,reps:10,weight:50},{id:"e_latpull",sets:3,reps:12,weight:50},{id:"bb_cablerows",sets:3,reps:12,weight:45},{id:"bb_straightlat",sets:3,reps:15,weight:25}]},
+      { name:"Shoulder Day", muscleGroups:["Shoulders"], goal:"Hypertrophy",
+        exercises:[{id:"e_ohpress",sets:4,reps:8,weight:50},{id:"e_arnoldp",sets:3,reps:10,weight:20},{id:"e2_cablat",sets:4,reps:12,weight:10},{id:"st_frontshoulift",sets:3,reps:12,weight:15},{id:"e2_rearfly",sets:4,reps:15,weight:10},{id:"e2_facepull",sets:3,reps:15,weight:20},{id:"st_shrugs",sets:4,reps:15,weight:30}]},
+      { name:"Arms Day", muscleGroups:["Biceps","Triceps"], goal:"Hypertrophy",
+        exercises:[{id:"e_biccurl",sets:4,reps:10,weight:20},{id:"bb_preacher",sets:3,reps:12,weight:20},{id:"e2_hammer",sets:3,reps:12,weight:15},{id:"e2_concurl",sets:3,reps:12,weight:12},{id:"t_pardips",sets:4,reps:10,weight:0},{id:"t_skull",sets:3,reps:10,weight:25},{id:"t_tricerope",sets:3,reps:12,weight:15},{id:"t_ohcabext",sets:3,reps:12,weight:15}]},
+      { name:"Legs Day", muscleGroups:["Legs"], goal:"Strength",
+        exercises:[{id:"e_squat",sets:4,reps:8,weight:80},{id:"e_legpress",sets:4,reps:12,weight:120},{id:"e2_romdead",sets:3,reps:10,weight:80},{id:"e2_hipthrust",sets:3,reps:12,weight:90},{id:"e2_bss",sets:3,reps:10,weight:20},{id:"leg_legext",sets:3,reps:15,weight:30},{id:"e2_legcurl",sets:3,reps:15,weight:30},{id:"e_calfr",sets:4,reps:20,weight:0}]},
+    ]
+  },
+  {
+    id:"fullbody3", name:"Full Body 3×/Week", emoji:"⚡", duration:"3 days/week", level:"Beginner",
+    description:"Alternate Workout A and B each session (Mon A · Wed B · Fri A · Mon B…). Hits every major muscle group twice per week — the most efficient structure for beginners building a foundation.",
+    color:"#06D6A0",
+    workouts:[
+      { name:"Full Body A", muscleGroups:["Chest","Back","Legs","Shoulders","Core"], goal:"Strength",
+        exercises:[{id:"e_squat",sets:3,reps:8,weight:60},{id:"e_flatpyram",sets:3,reps:8,weight:60},{id:"e_dbrow",sets:3,reps:8,weight:30},{id:"e_ohpress",sets:3,reps:10,weight:30},{id:"e2_romdead",sets:3,reps:10,weight:60},{id:"e_biccurl",sets:2,reps:12,weight:15},{id:"ch_plank",sets:3,reps:30,weight:0}]},
+      { name:"Full Body B", muscleGroups:["Back","Legs","Chest","Biceps","Core"], goal:"Strength",
+        exercises:[{id:"e_deadlift",sets:3,reps:5,weight:80},{id:"bh927o8",sets:3,reps:10,weight:40},{id:"e_latpull",sets:3,reps:10,weight:45},{id:"e_legpress",sets:3,reps:12,weight:80},{id:"e_arnoldp",sets:3,reps:10,weight:15},{id:"e2_hammer",sets:3,reps:12,weight:12},{id:"e2_hangleg",sets:3,reps:12,weight:0}]},
+    ]
+  }
 ];
 
 const DAY_TEMPLATES = [

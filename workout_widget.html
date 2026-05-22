@@ -737,17 +737,12 @@ function migrateRemoveDefaultWorkouts() {
 }
 migrateRemoveDefaultWorkouts();
 
-(function migrateNewExercises() {
-  if (localStorage.getItem("ww-ex-v4")) return;
-  try {
-    var raw = localStorage.getItem("ww-ex4");
-    if (raw) {
-      var existing = JSON.parse(raw);
-      var existingIds = new Set(existing.map(function(e){return e.id;}));
-      var toAdd = DEFAULT_EXERCISES.filter(function(e){return !existingIds.has(e.id);});
-      if (toAdd.length > 0) localStorage.setItem("ww-ex4", JSON.stringify(existing.concat(toAdd)));
-    }
-  } catch(e) {}
+(function(){
+  if(localStorage.getItem("ww-ex-v4"))return;
+  try{
+    var r=localStorage.getItem("ww-ex4");
+    if(r){var ex=JSON.parse(r);var ids=new Set(ex.map(function(e){return e.id;}));var add=DEFAULT_EXERCISES.filter(function(e){return !ids.has(e.id);});if(add.length>0)localStorage.setItem("ww-ex4",JSON.stringify(ex.concat(add)));}
+  }catch(e){}
   localStorage.setItem("ww-ex-v4","1");
 })();
 
@@ -1597,56 +1592,57 @@ function TrendView({history,exercises}) {
 }
 
 // ─── HISTORY TAB ─────────────────────────────────────────────────────────────
-// ─── BADGES VIEW ─────────────────────────────────────────────────────────────
+
+// --- BADGES VIEW ---
 function BadgesView({history,exercises,prMap,streak}) {
   var totalW=history.length;
   var totalSets=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){return b+l.sets.filter(function(s){return s.done;}).length;},0);},0);
   var totalVol=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){return b+l.sets.filter(function(s){return s.done;}).reduce(function(c,s){return c+(s.reps*s.weight);},0);},0);},0);
   var totalPRs=Object.keys(prMap).length;
-  var uniqueExIds=new Set();history.forEach(function(h){h.log.forEach(function(l){uniqueExIds.add(l.exId);});});
-  var uniqueMuscles=new Set();history.forEach(function(h){(h.muscleGroups||[]).forEach(function(g){uniqueMuscles.add(g);});});
+  var uniqEx=new Set();history.forEach(function(h){h.log.forEach(function(l){uniqEx.add(l.exId);});});
+  var uniqMg=new Set();history.forEach(function(h){(h.muscleGroups||[]).forEach(function(g){uniqMg.add(g);});});
   var BADGES=[
-    {id:"s3",emoji:"🔥",name:"First Flame",desc:"3-day streak",cat:"Streak",earned:streak>=3},
-    {id:"s7",emoji:"🔥",name:"Fire Week",desc:"7-day streak",cat:"Streak",earned:streak>=7},
-    {id:"s14",emoji:"⚡",name:"Fortnight",desc:"14-day streak",cat:"Streak",earned:streak>=14},
-    {id:"s30",emoji:"🌙",name:"Month Strong",desc:"30-day streak",cat:"Streak",earned:streak>=30},
-    {id:"s60",emoji:"☄️",name:"Two Months",desc:"60-day streak",cat:"Streak",earned:streak>=60},
-    {id:"s100",emoji:"💫",name:"Century Streak",desc:"100-day streak",cat:"Streak",earned:streak>=100},
-    {id:"w1",emoji:"🎯",name:"First Step",desc:"Logged your first workout",cat:"Workouts",earned:totalW>=1},
-    {id:"w10",emoji:"💪",name:"Getting Started",desc:"10 workouts logged",cat:"Workouts",earned:totalW>=10},
-    {id:"w25",emoji:"🏋️",name:"Committed",desc:"25 workouts",cat:"Workouts",earned:totalW>=25},
-    {id:"w50",emoji:"🔱",name:"Dedicated",desc:"50 workouts",cat:"Workouts",earned:totalW>=50},
-    {id:"w100",emoji:"🥇",name:"Century Club",desc:"100 workouts",cat:"Workouts",earned:totalW>=100},
-    {id:"w250",emoji:"⚡",name:"Elite",desc:"250 workouts",cat:"Workouts",earned:totalW>=250},
-    {id:"w500",emoji:"👑",name:"Legend",desc:"500 workouts",cat:"Workouts",earned:totalW>=500},
-    {id:"st100",emoji:"✅",name:"100 Sets",desc:"100 total sets done",cat:"Volume",earned:totalSets>=100},
-    {id:"st500",emoji:"💯",name:"500 Club",desc:"500 sets done",cat:"Volume",earned:totalSets>=500},
-    {id:"st1k",emoji:"💥",name:"1K Sets",desc:"1,000 sets done",cat:"Volume",earned:totalSets>=1000},
-    {id:"st5k",emoji:"🔥",name:"5K Sets",desc:"5,000 sets done",cat:"Volume",earned:totalSets>=5000},
-    {id:"v1k",emoji:"📦",name:"First Load",desc:"1,000 lbs total volume",cat:"Volume",earned:totalVol>=1000},
-    {id:"v10k",emoji:"🚛",name:"Heavy Hauler",desc:"10,000 lbs lifted",cat:"Volume",earned:totalVol>=10000},
-    {id:"v100k",emoji:"🏗️",name:"Iron Worker",desc:"100,000 lbs volume",cat:"Volume",earned:totalVol>=100000},
-    {id:"v500k",emoji:"🌋",name:"Mountain Mover",desc:"500,000 lbs",cat:"Volume",earned:totalVol>=500000},
-    {id:"v1m",emoji:"🚀",name:"Ton Club",desc:"1,000,000 lbs lifted",cat:"Volume",earned:totalVol>=1000000},
-    {id:"pr1",emoji:"🏆",name:"First PR",desc:"Set your first personal record",cat:"PRs",earned:totalPRs>=1},
-    {id:"pr5",emoji:"🥈",name:"5 PRs",desc:"5 different exercise PRs",cat:"PRs",earned:totalPRs>=5},
-    {id:"pr10",emoji:"🥇",name:"10 PRs",desc:"10 exercise personal records",cat:"PRs",earned:totalPRs>=10},
-    {id:"pr25",emoji:"🎖️",name:"PR Machine",desc:"25 personal records",cat:"PRs",earned:totalPRs>=25},
-    {id:"pr50",emoji:"👑",name:"PR Royalty",desc:"50 personal records",cat:"PRs",earned:totalPRs>=50},
-    {id:"ex5",emoji:"🔭",name:"Explorer",desc:"Tried 5 different exercises",cat:"Variety",earned:uniqueExIds.size>=5},
-    {id:"ex10",emoji:"🗺️",name:"Adventurer",desc:"Tried 10 different exercises",cat:"Variety",earned:uniqueExIds.size>=10},
-    {id:"ex20",emoji:"🌍",name:"World Traveler",desc:"Tried 20 different exercises",cat:"Variety",earned:uniqueExIds.size>=20},
-    {id:"mg5",emoji:"🧬",name:"All-Rounder",desc:"Trained 5 muscle groups",cat:"Variety",earned:uniqueMuscles.size>=5},
-    {id:"mg_all",emoji:"💎",name:"Complete Athlete",desc:"Trained every major muscle group",cat:"Variety",earned:uniqueMuscles.size>=7},
+    {id:"s3",e:"🔥",name:"First Flame",desc:"3-day streak",cat:"Streak",earned:streak>=3},
+    {id:"s7",e:"🔥",name:"Fire Week",desc:"7-day streak",cat:"Streak",earned:streak>=7},
+    {id:"s14",e:"⚡",name:"Fortnight",desc:"14-day streak",cat:"Streak",earned:streak>=14},
+    {id:"s30",e:"🌙",name:"Month Strong",desc:"30-day streak",cat:"Streak",earned:streak>=30},
+    {id:"s60",e:"☄️",name:"Two Months",desc:"60-day streak",cat:"Streak",earned:streak>=60},
+    {id:"s100",e:"💫",name:"Century Streak",desc:"100-day streak",cat:"Streak",earned:streak>=100},
+    {id:"w1",e:"🎯",name:"First Step",desc:"Logged your first workout",cat:"Workouts",earned:totalW>=1},
+    {id:"w10",e:"💪",name:"Getting Started",desc:"10 workouts logged",cat:"Workouts",earned:totalW>=10},
+    {id:"w25",e:"🏋️",name:"Committed",desc:"25 workouts",cat:"Workouts",earned:totalW>=25},
+    {id:"w50",e:"🔱",name:"Dedicated",desc:"50 workouts",cat:"Workouts",earned:totalW>=50},
+    {id:"w100",e:"🥇",name:"Century Club",desc:"100 workouts",cat:"Workouts",earned:totalW>=100},
+    {id:"w250",e:"⚡",name:"Elite",desc:"250 workouts",cat:"Workouts",earned:totalW>=250},
+    {id:"w500",e:"👑",name:"Legend",desc:"500 workouts",cat:"Workouts",earned:totalW>=500},
+    {id:"st100",e:"✅",name:"100 Sets",desc:"100 total sets done",cat:"Volume",earned:totalSets>=100},
+    {id:"st500",e:"💯",name:"500 Club",desc:"500 sets done",cat:"Volume",earned:totalSets>=500},
+    {id:"st1k",e:"💥",name:"1K Sets",desc:"1,000 sets done",cat:"Volume",earned:totalSets>=1000},
+    {id:"st5k",e:"🔥",name:"5K Sets",desc:"5,000 sets done",cat:"Volume",earned:totalSets>=5000},
+    {id:"v1k",e:"📦",name:"First Load",desc:"1,000 lbs volume",cat:"Volume",earned:totalVol>=1000},
+    {id:"v10k",e:"🚛",name:"Heavy Hauler",desc:"10,000 lbs",cat:"Volume",earned:totalVol>=10000},
+    {id:"v100k",e:"🏗️",name:"Iron Worker",desc:"100,000 lbs",cat:"Volume",earned:totalVol>=100000},
+    {id:"v500k",e:"🌋",name:"Mountain Mover",desc:"500,000 lbs",cat:"Volume",earned:totalVol>=500000},
+    {id:"v1m",e:"🚀",name:"Ton Club",desc:"1,000,000 lbs",cat:"Volume",earned:totalVol>=1000000},
+    {id:"pr1",e:"🏆",name:"First PR",desc:"First personal record",cat:"PRs",earned:totalPRs>=1},
+    {id:"pr5",e:"🥈",name:"5 PRs",desc:"5 exercise PRs",cat:"PRs",earned:totalPRs>=5},
+    {id:"pr10",e:"🥇",name:"10 PRs",desc:"10 personal records",cat:"PRs",earned:totalPRs>=10},
+    {id:"pr25",e:"🎖️",name:"PR Machine",desc:"25 personal records",cat:"PRs",earned:totalPRs>=25},
+    {id:"pr50",e:"👑",name:"PR Royalty",desc:"50 personal records",cat:"PRs",earned:totalPRs>=50},
+    {id:"ex5",e:"🔭",name:"Explorer",desc:"Tried 5 exercises",cat:"Variety",earned:uniqEx.size>=5},
+    {id:"ex10",e:"🗺️",name:"Adventurer",desc:"Tried 10 exercises",cat:"Variety",earned:uniqEx.size>=10},
+    {id:"ex20",e:"🌍",name:"World Traveler",desc:"Tried 20 exercises",cat:"Variety",earned:uniqEx.size>=20},
+    {id:"mg5",e:"🧬",name:"All-Rounder",desc:"Trained 5 muscle groups",cat:"Variety",earned:uniqMg.size>=5},
+    {id:"mg7",e:"💎",name:"Complete Athlete",desc:"Trained all major groups",cat:"Variety",earned:uniqMg.size>=7},
   ];
   var cats=["Streak","Workouts","Volume","PRs","Variety"];
-  var earnedCount=BADGES.filter(function(b){return b.earned;}).length;
+  var earned=BADGES.filter(function(b){return b.earned;}).length;
   return React.createElement("div",{className:"content",style:{paddingTop:4}},
     React.createElement("div",{style:{background:"linear-gradient(135deg,var(--acc),var(--acc2))",borderRadius:14,padding:"16px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}},
       React.createElement("div",{style:{fontSize:36,lineHeight:1}},"🏅"),
       React.createElement("div",null,
-        React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:22,color:"#fff",letterSpacing:.5}},earnedCount," / ",BADGES.length," BADGES"),
-        React.createElement("div",{style:{fontSize:11,color:"rgba(255,255,255,.75)",marginTop:2}},earnedCount===BADGES.length?"All badges unlocked!":"Keep training to unlock more")
+        React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:22,color:"#fff",letterSpacing:.5}},earned," / ",BADGES.length," BADGES"),
+        React.createElement("div",{style:{fontSize:11,color:"rgba(255,255,255,.75)",marginTop:2}},earned===BADGES.length?"All badges unlocked!":"Keep training to unlock more")
       )
     ),
     cats.map(function(cat){
@@ -1656,7 +1652,7 @@ function BadgesView({history,exercises,prMap,streak}) {
         React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}},
           group.map(function(b){
             return React.createElement("div",{key:b.id,style:{background:b.earned?"var(--card)":"var(--s1)",border:"1.5px solid "+(b.earned?"var(--acc)":"var(--border)"),borderRadius:14,padding:"12px 10px",textAlign:"center",opacity:b.earned?1:0.5}},
-              React.createElement("div",{style:{fontSize:28,marginBottom:4,filter:b.earned?"none":"grayscale(1)"}},b.emoji),
+              React.createElement("div",{style:{fontSize:28,marginBottom:4,filter:b.earned?"none":"grayscale(1)"}},b.e),
               React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:13,letterSpacing:.3,color:b.earned?"var(--acc)":"var(--muted)",marginBottom:2}},b.name),
               React.createElement("div",{style:{fontSize:9,color:"var(--dim)",lineHeight:1.3}},b.desc)
             );
@@ -1666,7 +1662,6 @@ function BadgesView({history,exercises,prMap,streak}) {
     })
   );
 }
-
 function SwipeCard({onDelete,children,resetSignal}) {
   const [offset,setOffset]=useState(0);
   const [dragging,setDragging]=useState(false);
@@ -1692,10 +1687,10 @@ function HistoryTab({history,setHistory,exercises,onProgress}) {
   const [histView,   setHistView]   = useState("history"); // "history" | "trends"
   const [delConfirm, setDelConfirm] = useState(null);
   const [clearAll,   setClearAll]   = useState(false);
-  const [favPRs,     setFavPRs]     = useStorage("ww-pr-fav", []);
-  const [prView,     setPrView]     = useState(false);
-  const [histDrill,  setHistDrill]  = useState(null);
-  const [swipeReset, setSwipeReset] = useState(0);
+  const [favPRs,setFavPRs]=useStorage("ww-pr-fav",[]);
+  const [prView,setPrView]=useState(false);
+  const [histDrill,setHistDrill]=useState(null);
+  const [swipeReset,setSwipeReset]=useState(0);
 
   const totalW=history.length,totalS=history.reduce((a,h)=>a+h.log.reduce((b,e)=>b+e.sets.filter(s=>s.done).length,0),0),totalT=history.reduce((a,h)=>a+(h.duration||0),0);
   const fmt=iso=>{const d=new Date(iso);return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};

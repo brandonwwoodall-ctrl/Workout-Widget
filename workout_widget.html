@@ -1198,7 +1198,73 @@ function WorkoutEditor({workout,exercises,onSave,onClose,onDemo,muscleGroups:cus
 }
 
 // ─── COMPLETION SCREEN ────────────────────────────────────────────────────────
+// ─── APPLE HEALTH BRIDGE ─────────────────────────────────────────────────────
+function logToAppleHealth(data, shortcutName) {
+  var muscleGroups = data.muscleGroups || [];
+  var isHIIT = muscleGroups.some(function(g){return g==="HIIT"||g==="Cardio";});
+  var type = isHIIT ? "High Intensity Interval Training" : "Traditional Strength Training";
+  var met  = isHIIT ? 8.0 : 5.5;
+  var dur  = Math.max(data.duration||1, 1);
+  var cal  = Math.round(met * 75 * (dur / 60));
+  var sets = data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).length;},0);
+  var vol  = data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
+  var payload = JSON.stringify({name:data.workoutName,duration:dur,calories:cal,type:type,sets:sets,volume:Math.round(vol),date:data.date});
+  var sc = encodeURIComponent(shortcutName||"WW Health");
+  window.location.href = "shortcuts://run-shortcut?name="+sc+"&input=text&text="+encodeURIComponent(payload);
+}
+
+function HealthGuideModal({onClose,shortcutName,setShortcutName}) {
+  var [editName,setEditName] = useState(shortcutName||"WW Health");
+  var steps = [
+    {n:1, title:"Open Shortcuts app", detail:'Tap "+" (top-right) to create a new Shortcut.'},
+    {n:2, title:'Add "Get Dictionary from Input"', detail:'Tap Add Action → search "Get Dictionary from Input" → add it.'},
+    {n:3, title:'Add "Log Workout"', detail:'Search for "Log Workout" → add it. Set Activity to Traditional Strength Training.
+For Duration: tap the Duration field → tap the variable icon → select the Dictionary result → type key "duration" → set unit Minutes.
+For Calories: same process, key "calories", unit Cal.'},
+    {n:4, title:'Add "Show Notification" (optional)', detail:'Search "Show Notification" → add with text "Logged to Apple Health ✓".'},
+    {n:5, title:'Name the shortcut', detail:'Tap the title at the top → name it exactly "WW Health" (or your custom name below) → tap Done.'},
+  ];
+  return React.createElement("div",{style:{position:"fixed",inset:0,zIndex:95,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"flex-end"},onClick:function(e){if(e.target===e.currentTarget)onClose();}},
+    React.createElement("div",{style:{background:"var(--card)",borderRadius:"20px 20px 0 0",width:"100%",maxHeight:"90vh",overflowY:"auto",padding:"24px 18px 44px"}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+          React.createElement("div",{style:{width:40,height:40,borderRadius:12,background:"linear-gradient(135deg,#fc3d5a,#ff2d55)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}},"❤️"),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:20,letterSpacing:.3}},"APPLE HEALTH SETUP"),
+            React.createElement("div",{style:{fontSize:11,color:"var(--muted)"}},"One-time iOS Shortcuts setup")
+          )
+        ),
+        React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:22,color:"var(--muted)",lineHeight:1},onClick:onClose},"×")
+      ),
+      React.createElement("div",{className:"card",style:{marginBottom:16,padding:"11px 13px",background:"var(--s1)",borderColor:"var(--border)"}},
+        React.createElement("p",{style:{fontSize:12,color:"var(--muted)",lineHeight:1.65}},
+          "Apple Health only allows native iOS apps to write data. This integration works via iOS Shortcuts — a companion Shortcut receives your workout data and logs it to Apple Health on your behalf."
+        )
+      ),
+      React.createElement("div",{className:"sec",style:{marginBottom:10}},"SETUP STEPS (iPhone/iPad only)"),
+      steps.map(function(s){
+        return React.createElement("div",{key:s.n,style:{display:"flex",gap:12,marginBottom:14}},
+          React.createElement("div",{style:{width:28,height:28,borderRadius:"50%",background:"var(--acc)",color:"#fff",fontFamily:"var(--fh)",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2}},s.n),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:700,fontSize:13,marginBottom:3}},s.title),
+            React.createElement("div",{style:{fontSize:12,color:"var(--muted)",lineHeight:1.6,whiteSpace:"pre-wrap"}},s.detail)
+          )
+        );
+      }),
+      React.createElement("div",{style:{marginTop:20,marginBottom:6}},
+        React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--muted)",letterSpacing:.5,marginBottom:6}},"YOUR SHORTCUT NAME"),
+        React.createElement("input",{value:editName,onChange:function(e){setEditName(e.target.value);},placeholder:"WW Health",style:{width:"100%",padding:"11px 13px",borderRadius:10,border:"1.5px solid var(--border2)",background:"var(--s1)",color:"var(--text)",fontSize:15,fontFamily:"var(--fb)",boxSizing:"border-box",outline:"none"}}),
+        React.createElement("div",{style:{fontSize:11,color:"var(--dim)",marginTop:4}},'Must match the Shortcut name exactly (case-sensitive).')
+      ),
+      React.createElement("button",{className:"btn-acc",style:{marginTop:14,width:"100%",justifyContent:"center"},onClick:function(){if(editName.trim())setShortcutName(editName.trim());onClose();}},React.createElement(Ic.Check)," Save & Done")
+    )
+  );
+}
+
 function CompletionScreen({data,history,exercises,onDone}) {
+  var [showGuide,setShowGuide]=useState(false);
+  var [shortcutName,setShortcutName]=useStorage("ww-ahsc","WW Health");
+  var isIOS=/iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
   var prMap={};
   (history||[]).forEach(function(h){h.log.forEach(function(l){l.sets.filter(function(s){return s.done&&s.weight>0;}).forEach(function(s){if(!prMap[l.exId]||s.weight>prMap[l.exId])prMap[l.exId]=s.weight;});});});
   var newPRs=[];
@@ -1208,7 +1274,8 @@ function CompletionScreen({data,history,exercises,onDone}) {
   });
   var totalSets=data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).length;},0);
   var totalVol=data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
-  return React.createElement("div",{style:{position:"fixed",inset:0,zIndex:80,background:"var(--bg)",display:"flex",flexDirection:"column",overflowY:"auto"}},
+  return React.createElement(React.Fragment,null,
+  React.createElement("div",{style:{position:"fixed",inset:0,zIndex:80,background:"var(--bg)",display:"flex",flexDirection:"column",overflowY:"auto"}},
     React.createElement("div",{style:{background:"linear-gradient(160deg,var(--acc),var(--acc2))",padding:"64px 24px 32px",textAlign:"center"}},
       React.createElement("div",{style:{fontSize:56,marginBottom:8}},"🎉"),
       React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:34,color:"#fff",letterSpacing:1,lineHeight:1}},"WORKOUT"),
@@ -1247,8 +1314,16 @@ function CompletionScreen({data,history,exercises,onDone}) {
           })
         );
       })(),
-      React.createElement("button",{className:"btn-acc",onClick:onDone},React.createElement(Ic.Check)," SAVE & DONE")
+      React.createElement("button",{className:"btn-acc",onClick:onDone},React.createElement(Ic.Check)," SAVE & DONE"),
+      isIOS&&React.createElement("button",{style:{width:"100%",marginTop:8,padding:"14px 0",borderRadius:12,border:"none",background:"linear-gradient(135deg,#fc3d5a,#ff2d55)",color:"#fff",fontFamily:"var(--fb)",fontWeight:700,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8},onClick:function(){logToAppleHealth(data,shortcutName);}},
+        React.createElement(Ic.AppleHealth)," Log to Apple Health"
+      ),
+      isIOS&&React.createElement("button",{style:{width:"100%",marginTop:6,padding:"10px 0",borderRadius:12,border:"1px solid var(--border)",background:"none",color:"var(--muted)",fontFamily:"var(--fb)",fontWeight:600,fontSize:12,cursor:"pointer"},onClick:function(){setShowGuide(true);}},
+        "⚙️ Apple Health Setup"
+      )
     )
+  ),
+  showGuide&&React.createElement(HealthGuideModal,{onClose:function(){setShowGuide(false);},shortcutName:shortcutName,setShortcutName:setShortcutName})
   );
 }
 

@@ -780,6 +780,19 @@ migrateRemoveDefaultWorkouts();
   }catch(e){}
   localStorage.setItem("ww-ex-v5","1");
 })();
+(function(){
+  if(localStorage.getItem("ww-ex-v6"))return;
+  try{
+    var r=localStorage.getItem("ww-ex4");
+    if(r){
+      var ex=JSON.parse(r);
+      var ids=new Set(ex.map(function(e){return e.id;}));
+      var add=DEFAULT_EXERCISES.filter(function(e){return !ids.has(e.id);});
+      if(add.length>0)localStorage.setItem("ww-ex4",JSON.stringify(ex.concat(add)));
+    }
+  }catch(e){}
+  localStorage.setItem("ww-ex-v6","1");
+})();
 
 function BarChart({data,labels,color,height}) {
   if(!data||!data.length) return null;

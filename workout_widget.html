@@ -1241,7 +1241,9 @@ function logToAppleHealth(data, shortcutName) {
   var cal  = Math.round(met * 75 * (dur / 60));
   var sets = data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).length;},0);
   var vol  = data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
-  var payload = JSON.stringify({name:data.workoutName,duration:dur,calories:cal,type:type,sets:sets,volume:Math.round(vol),date:data.date});
+  var endISO = data.date || new Date().toISOString();
+  var startISO = new Date(new Date(endISO).getTime() - dur * 60000).toISOString();
+  var payload = JSON.stringify({name:data.workoutName,duration:dur,calories:cal,type:type,sets:sets,volume:Math.round(vol),start:startISO,end:endISO});
   var sc = encodeURIComponent(shortcutName||"WW Health");
   window.location.href = "shortcuts://run-shortcut?name="+sc+"&input=text&text="+encodeURIComponent(payload);
 }
@@ -1249,11 +1251,11 @@ function logToAppleHealth(data, shortcutName) {
 function HealthGuideModal({onClose,shortcutName,setShortcutName}) {
   var [editName,setEditName] = useState(shortcutName||"WW Health");
   var steps = [
-    {n:1, title:"Open Shortcuts app", detail:'Tap "+" (top-right) to create a new Shortcut.'},
-    {n:2, title:'Add "Get Dictionary from Input"', detail:'Tap Add Action → search "Get Dictionary from Input" → add it.'},
-    {n:3, title:'Add "Log Workout"', detail:'Search "Log Workout" → add it. Set Activity to Traditional Strength Training. For Duration: tap the field → variable icon → Dictionary result → key "duration" → Minutes. For Calories: same, key "calories", unit Cal.'},
-    {n:4, title:'Add "Show Notification" (optional)', detail:'Search "Show Notification" → add with text "Logged to Apple Health ✓".'},
-    {n:5, title:'Name the shortcut', detail:'Tap the title at the top → name it exactly "WW Health" (or your custom name below) → tap Done.'},
+    {n:1, title:"Create a new Shortcut", detail:'Open the Shortcuts app (pre-installed on all iPhones). Tap the + button in the top-right corner.'},
+    {n:2, title:'Add "Get Dictionary from Input"', detail:'Tap Add Action → in the search bar type Dictionary → select "Get Dictionary from Input". No settings needed — this automatically reads the workout data sent from Workout Widget.'},
+    {n:3, title:'Add "Log Workout"', detail:'Tap the + below the first action → search Log Workout → select it (listed under Health).\n\n• Activity: tap → choose Traditional Strength Training (or High Intensity Interval Training for cardio workouts)\n• Start Date: tap the date → tap the ⊞ variable icon → select Dictionary → tap "Value for Key" → type start → Done\n• End Date: same process → key: end\n• Active Energy Burned: tap the number → tap ⊞ → Dictionary → "Value for Key" → key: calories → change unit to Cal\n\nLeave Distance and Elevation blank.'},
+    {n:4, title:'Add a confirmation (optional but recommended)', detail:'Tap + → search Show Notification → add it. Set the message to: Logged to Apple Health ✓\n\nThis gives you a visible confirmation on your lock screen after logging.'},
+    {n:5, title:'Name it and allow it to run', detail:'Tap the shortcut title at the very top of the editor → type exactly: WW Health (case-sensitive, must match the name below) → tap Done.\n\nFinally, go back, long-press the shortcut tile → tap Details → turn on "Allow Running Without Asking" so it runs immediately without a confirmation popup.'},
   ];
   return React.createElement("div",{style:{position:"fixed",inset:0,zIndex:95,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"flex-end"},onClick:function(e){if(e.target===e.currentTarget)onClose();}},
     React.createElement("div",{style:{background:"var(--card)",borderRadius:"20px 20px 0 0",width:"100%",maxHeight:"90vh",overflowY:"auto",padding:"24px 18px 44px"}},
@@ -1269,7 +1271,7 @@ function HealthGuideModal({onClose,shortcutName,setShortcutName}) {
       ),
       React.createElement("div",{className:"card",style:{marginBottom:16,padding:"11px 13px",background:"var(--s1)",borderColor:"var(--border)"}},
         React.createElement("p",{style:{fontSize:12,color:"var(--muted)",lineHeight:1.65}},
-          "Apple Health only allows native iOS apps to write data. This integration works via iOS Shortcuts — a companion Shortcut receives your workout data and logs it to Apple Health on your behalf."
+          "Apple Health only allows native apps to write workout data — web apps cannot write directly. This integration uses iOS Shortcuts as a bridge: tapping LOG TO APPLE HEALTH on the completion screen sends your workout (type, start time, end time, and calories) to a Shortcut you build below, which logs it to Apple Health on your behalf."
         )
       ),
       React.createElement("div",{className:"sec",style:{marginBottom:10}},"SETUP STEPS (iPhone/iPad only)"),

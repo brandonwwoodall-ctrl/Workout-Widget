@@ -122,21 +122,16 @@ function loadExercises() {
   try {
     var dm = getDefaultMap();
     var raw = localStorage.getItem("ww-ex4");
-    if (!raw) return DEFAULT_EXERCISES.slice();
+    // DEFAULT exercises always come from code — correct categories, never stale.
+    // Only custom (admin-added) exercises with IDs not in DEFAULT come from storage.
+    var result = DEFAULT_EXERCISES.slice();
+    if (!raw) return result;
     var stored = JSON.parse(raw);
-    if (!Array.isArray(stored) || stored.length === 0) return DEFAULT_EXERCISES.slice();
-    // Restore images from DEFAULT for known exercises; keep custom exercises as-is
-    var storedIds = new Set(stored.map(function(e) { return e.id; }));
-    var restored = stored.map(function(e) {
-      var def = dm[e.id];
-      if (def) { return Object.assign({}, def, e, {images: def.images}); }
-      return e;
+    if (!Array.isArray(stored)) return result;
+    stored.forEach(function(e) {
+      if (!dm[e.id]) result.push(e); // append custom exercises only
     });
-    // Always include every DEFAULT exercise (adds any that were missing from storage)
-    DEFAULT_EXERCISES.forEach(function(e) {
-      if (!storedIds.has(e.id)) restored.push(e);
-    });
-    return restored;
+    return result;
   } catch(err) {
     return DEFAULT_EXERCISES.slice();
   }
@@ -145,12 +140,9 @@ function loadExercises() {
 function saveExercises(exercises) {
   try {
     var dm = getDefaultMap();
-    // Strip images from DEFAULT exercises — they're always available from code
-    var slim = exercises.map(function(e) {
-      if (dm[e.id]) { var c = Object.assign({}, e); delete c.images; return c; }
-      return e;
-    });
-    localStorage.setItem("ww-ex4", JSON.stringify(slim));
+    // Only persist custom exercises — DEFAULT ones are always in code
+    var custom = exercises.filter(function(e) { return !dm[e.id]; });
+    localStorage.setItem("ww-ex4", JSON.stringify(custom));
   } catch(err) {}
 }
 

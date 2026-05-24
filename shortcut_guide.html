@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WW Health — iOS 26 Shortcut Setup</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:#f2f2f7;color:#1c1c1e;}
+
+  /* ── Header ── */
+  .guide-header{background:linear-gradient(150deg,#fc3d5a,#c026d3);color:white;padding:52px 24px 36px;text-align:center;}
+  .guide-header h1{font-size:26px;font-weight:800;letter-spacing:-0.5px;}
+  .guide-header p{font-size:13px;opacity:.85;margin-top:6px;}
+  .ios-badge{display:inline-block;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;margin-top:10px;}
+
+  /* ── Card ── */
+  .step-section{margin:16px 14px;background:white;border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.07);}
+  .step-label{background:linear-gradient(90deg,#fc3d5a,#c026d3);color:white;font-size:11px;font-weight:700;letter-spacing:1px;padding:7px 16px;text-transform:uppercase;}
+  .step-content{padding:16px;}
+  .step-title{font-size:17px;font-weight:700;margin-bottom:5px;}
+  .step-desc{font-size:14px;color:#636366;line-height:1.6;margin-bottom:14px;}
+  .step-desc b{color:#1c1c1e;}
+
+  /* ── Phone shell ── */
+  .phone{width:250px;margin:0 auto 6px;background:#18181b;border-radius:44px;padding:11px;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.08);}
+  .phone-inner{background:#f2f2f7;border-radius:34px;overflow:hidden;min-height:440px;position:relative;}
+
+  /* ── iOS 26 Liquid Glass nav ── */
+  .nav26{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 16px 8px;
+    background:rgba(242,242,247,.72);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-bottom:0.5px solid rgba(0,0,0,.10);
+    position:sticky;top:0;z-index:10;
+  }
+  .nav26-title{font-size:15px;font-weight:700;color:#1c1c1e;}
+  .nav26-btn{font-size:14px;color:#007aff;font-weight:400;}
+  .nav26-btn-bold{font-size:14px;color:#007aff;font-weight:700;}
+
+  /* ── Search bar ── */
+  .search26{
+    margin:10px 14px;background:rgba(118,118,128,.12);
+    border-radius:12px;padding:8px 12px;
+    font-size:13px;color:#636366;display:flex;align-items:center;gap:7px;
+  }
+  .search26 span{color:#8e8e93;}
+
+  /* ── Action blocks ── */
+  .action-block{margin:6px 12px;border-radius:14px;overflow:hidden;}
+  .action-hdr{padding:10px 13px;font-size:13px;font-weight:600;color:white;display:flex;align-items:center;gap:8px;}
+  .action-body{background:rgba(242,242,247,.9);padding:6px 13px;}
+  .action-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:.5px solid rgba(0,0,0,.06);}
+  .action-row:last-child{border-bottom:none;}
+  .action-lbl{color:#636366;font-size:12px;}
+  .action-val{font-size:12px;font-weight:500;background:white;border-radius:8px;padding:3px 9px;border:.5px solid #d1d1d6;color:#1c1c1e;}
+  .action-val.typing{background:#fff8e7;border-color:#ff9500;color:#92400e;font-weight:700;}
+  .action-val.variable{background:#e8f0fe;color:#1a56db;border-color:#93c5fd;font-weight:600;font-size:11px;}
+  .action-val.done{background:#ecfdf5;color:#065f46;border-color:#6ee7b7;font-weight:600;font-size:11px;}
+  .action-val.activity{background:#dcfce7;color:#14532d;border-color:#86efac;font-weight:600;font-size:11px;}
+
+  /* ── Result row ── */
+  .result-row{padding:11px 14px;border-bottom:.5px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:11px;font-size:13px;}
+  .result-row:last-child{border-bottom:none;}
+  .result-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .result-title{font-weight:600;font-size:13px;}
+  .result-sub{font-size:11px;color:#8e8e93;}
+
+  /* ── Tap badge ── */
+  .tap-badge{background:#fc3d5a;color:white;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;white-space:nowrap;letter-spacing:.3px;}
+
+  /* ── Variable picker ── */
+  .var-picker{background:white;border-radius:16px;margin:8px 12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.12);}
+  .var-picker-hdr{padding:8px 14px;font-size:11px;font-weight:700;color:#8e8e93;text-transform:uppercase;letter-spacing:.5px;border-bottom:.5px solid #f2f2f7;}
+  .var-item{padding:10px 14px;border-bottom:.5px solid #f2f2f7;font-size:13px;display:flex;align-items:center;gap:9px;}
+  .var-item:last-child{border-bottom:none;}
+  .var-item.pick{background:#eff6ff;}
+  .var-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+
+  /* ── Permission dialog ── */
+  .dim{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:18px;}
+  .dialog26{background:rgba(255,255,255,.96);backdrop-filter:blur(30px);border-radius:20px;padding:22px 18px 16px;text-align:center;width:100%;border:.5px solid rgba(255,255,255,.6);}
+  .dialog26-icon{font-size:36px;margin-bottom:10px;}
+  .dialog26-title{font-size:15px;font-weight:700;margin-bottom:7px;line-height:1.3;}
+  .dialog26-body{font-size:12px;color:#636366;line-height:1.5;margin-bottom:16px;}
+  .dialog26-btns{display:flex;flex-direction:column;gap:7px;}
+  .dbtn{padding:11px;border-radius:12px;font-size:14px;font-weight:600;border:none;width:100%;}
+  .dbtn.always{background:#007aff;color:white;}
+  .dbtn.once{background:rgba(0,122,255,.12);color:#007aff;}
+  .dbtn.deny{background:rgba(118,118,128,.12);color:#1c1c1e;font-weight:400;}
+
+  /* ── Callout boxes ── */
+  .callout{border-radius:12px;padding:11px 13px;font-size:13px;margin-top:10px;line-height:1.55;}
+  .callout.yellow{background:#fffbeb;border:1.5px solid #fcd34d;}
+  .callout.blue{background:#eff6ff;border:1.5px solid #93c5fd;}
+  .callout.red{background:#fff1f2;border:1.5px solid #fca5a5;}
+  .callout.green{background:#f0fdf4;border:1.5px solid #86efac;}
+  .callout b{color:#1c1c1e;}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:5px;font-family:monospace;font-size:13px;}
+
+  /* ── Misc ── */
+  .plus-row{text-align:center;color:#007aff;font-size:22px;font-weight:300;line-height:1;padding:1px 0;}
+  .caption{text-align:center;font-size:12px;color:#636366;padding:6px 14px 14px;line-height:1.5;}
+  .screen{padding:4px 0;}
+  .section-note{margin:20px 14px 0;font-size:12px;font-weight:700;color:#8e8e93;text-transform:uppercase;letter-spacing:.8px;}
+
+  /* shortcut tile */
+  .tile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;}
+  .tile{border-radius:16px;padding:12px;height:80px;display:flex;flex-direction:column;justify-content:flex-end;font-size:12px;font-weight:600;color:white;}
+
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(1.08)}}
+  .pulse{animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+  .cursor{display:inline-block;width:1.5px;height:14px;background:#007aff;vertical-align:middle;margin-left:1px;animation:blink 1s infinite;}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="guide-header">
+  <div style="font-size:44px;margin-bottom:12px">❤️</div>
+  <h1>WW Health Shortcut Setup</h1>
+  <p>Step-by-step guide · iOS Shortcuts app</p>
+  <div class="ios-badge">iOS 26</div>
+</div>
+
+<!-- ─── STEP 1 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 1</div>
+  <div class="step-content">
+    <div class="step-title">Open Shortcuts, tap +</div>
+    <div class="step-desc">Find the <b>Shortcuts</b> app on your iPhone (search for it if needed — it has a pink/purple icon). Tap the <b>+</b> button in the top-right corner.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:380px;">
+      <div class="nav26" style="padding-top:14px;">
+        <span class="nav26-btn">Gallery</span>
+        <span class="nav26-title">Shortcuts</span>
+        <span style="position:relative;display:flex;align-items:center;">
+          <span class="nav26-btn-bold" style="font-size:24px;line-height:1;">+</span>
+          <span class="tap-badge pulse" style="position:absolute;top:-10px;right:-28px;">TAP</span>
+        </span>
+      </div>
+      <div class="tile-grid">
+        <div class="tile" style="background:#34c759;">Morning Routine</div>
+        <div class="tile" style="background:#ff9500;">Focus Mode</div>
+        <div class="tile" style="background:#5ac8fa;">Log Water</div>
+        <div class="tile" style="background:#af52de;opacity:.35;"></div>
+      </div>
+    </div></div>
+    <div class="caption">The Shortcuts app icon is pink-purple in iOS 26. Tap <b>+</b> top-right.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 2 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 2</div>
+  <div class="step-content">
+    <div class="step-title">Tap "Add Action"</div>
+    <div class="step-desc">The blank shortcut editor opens. Tap the large <b>Add Action</b> button in the middle of the screen.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:320px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+        <span class="nav26-btn">⋯</span>
+      </div>
+      <div style="padding:40px 24px 0;display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <div style="position:relative;background:linear-gradient(135deg,#007aff,#5856d6);color:white;font-size:15px;font-weight:700;padding:16px 28px;border-radius:16px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">+</span> Add Action
+          <span class="tap-badge pulse" style="position:absolute;top:-10px;right:-10px;">TAP</span>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption">Tap <b>Add Action</b> to open the action search screen.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 3 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 3</div>
+  <div class="step-content">
+    <div class="step-title">Search "Dictionary" → tap "Get Dictionary from Input"</div>
+    <div class="step-desc">In the search bar at the top, type <b>Dictionary</b>. Tap <b>Get Dictionary from Input</b> from the list.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:360px;">
+      <div class="nav26">
+        <span class="nav26-btn">Cancel</span>
+        <div class="search26" style="flex:1;margin:0 8px;">
+          <span>🔍</span> Dictionary
+        </div>
+      </div>
+      <div class="screen" style="background:white;">
+        <div style="padding:6px 14px;font-size:11px;color:#8e8e93;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Scripting</div>
+        <div class="result-row" style="background:#eff6ff;position:relative;">
+          <div class="result-icon" style="background:#ff9500;">📖</div>
+          <div><div class="result-title">Get Dictionary from Input</div><div class="result-sub">Scripting</div></div>
+          <span class="tap-badge pulse" style="margin-left:auto;">TAP THIS</span>
+        </div>
+        <div class="result-row">
+          <div class="result-icon" style="background:#ff9500;">📖</div>
+          <div><div class="result-title">Set Dictionary Value</div><div class="result-sub">Scripting</div></div>
+        </div>
+        <div class="result-row">
+          <div class="result-icon" style="background:#ff9500;">📖</div>
+          <div><div class="result-title">Get Value for Key in Dictionary</div><div class="result-sub">Scripting</div></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption">Select <b>Get Dictionary from Input</b>. No settings needed on this action.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 4 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 4</div>
+  <div class="step-content">
+    <div class="step-title">Tap the + below the first action</div>
+    <div class="step-desc">You'll see the action appear. Tap the <b>+</b> button directly below it to add the next action.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:300px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+        <span class="nav26-btn">⋯</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#ff9500;">📖 Get Dictionary from Input</div>
+        </div>
+        <div style="text-align:center;padding:6px 0;position:relative;">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:#007aff;border-radius:50%;color:white;font-size:20px;font-weight:300;line-height:1;position:relative;">+
+            <span class="tap-badge pulse" style="position:absolute;top:-10px;right:-30px;">TAP +</span>
+          </span>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption">Tap the blue <b>+</b> circle below the first block.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 5 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 5</div>
+  <div class="step-content">
+    <div class="step-title">Search "Get Value" → add "Get Value for Key in Dictionary"</div>
+    <div class="step-desc">Search <b>Get Value</b> and tap <b>Get Value for Key in Dictionary</b>. You will add this action <b>three times total</b>.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:300px;">
+      <div class="nav26">
+        <span class="nav26-btn">Cancel</span>
+        <div class="search26" style="flex:1;margin:0 8px;">
+          <span>🔍</span> Get Value
+        </div>
+      </div>
+      <div class="screen" style="background:white;">
+        <div style="padding:6px 14px;font-size:11px;color:#8e8e93;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Scripting</div>
+        <div class="result-row" style="background:#eff6ff;position:relative;">
+          <div class="result-icon" style="background:#ff9500;">📖</div>
+          <div><div class="result-title">Get Value for Key in Dictionary</div><div class="result-sub">Scripting</div></div>
+          <span class="tap-badge pulse" style="margin-left:auto;">TAP THIS</span>
+        </div>
+        <div class="result-row">
+          <div class="result-icon" style="background:#5856d6;">📊</div>
+          <div><div class="result-title">Get Value from Custom Object</div><div class="result-sub">Scripting</div></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption">Select <b>Get Value for Key in Dictionary</b>. Configure it in step 6.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 6 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 6</div>
+  <div class="step-content">
+    <div class="step-title">Set Key = "start" and Dictionary = Dictionary</div>
+    <div class="step-desc">The action shows two fields. Tap <b>Key</b> and type <b>start</b>. Tap <b>Dictionary</b> and select the output of the first action.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:360px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#ff9500;">📖 Get Dictionary from Input</div>
+        </div>
+        <div class="plus-row">·</div>
+        <div class="action-block" style="outline:2px solid #fc3d5a;outline-offset:1px;">
+          <div class="action-hdr" style="background:#ff9500;">📖 Get Value for Key in Dictionary</div>
+          <div class="action-body">
+            <div class="action-row">
+              <span class="action-lbl">Key</span>
+              <span class="action-val typing">start<span class="cursor"></span></span>
+            </div>
+            <div class="action-row">
+              <span class="action-lbl">Dictionary</span>
+              <span class="action-val variable">Dictionary ▾</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="callout yellow">
+      <b>Key:</b> tap it → type <code>start</code> (lowercase)<br><br>
+      <b>Dictionary:</b> tap it → select <b>Dictionary</b> (the output from the first action above)
+    </div>
+  </div>
+</div>
+
+<!-- ─── STEP 7 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 7</div>
+  <div class="step-content">
+    <div class="step-title">Add a second "Get Value for Key" — key = "duration"</div>
+    <div class="step-desc">Tap <b>+</b> below the second action. Search <b>Get Value</b> again, add it, and set Key = <b>duration</b>. Dictionary = same Dictionary from before.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:420px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#ff9500;font-size:12px;">📖 Get Dictionary from Input</div>
+        </div>
+        <div class="plus-row">·</div>
+        <div class="action-block">
+          <div class="action-hdr" style="background:#ff9500;font-size:12px;">📖 Get Value for Key in Dictionary</div>
+          <div class="action-body">
+            <div class="action-row"><span class="action-lbl">Key</span><span class="action-val">start</span></div>
+            <div class="action-row"><span class="action-lbl">Dictionary</span><span class="action-val variable">Dictionary ▾</span></div>
+          </div>
+        </div>
+        <div class="plus-row">·</div>
+        <div class="action-block" style="outline:2px solid #fc3d5a;outline-offset:1px;">
+          <div class="action-hdr" style="background:#ff9500;font-size:12px;">📖 Get Value for Key in Dictionary</div>
+          <div class="action-body">
+            <div class="action-row"><span class="action-lbl">Key</span><span class="action-val typing">duration</span></div>
+            <div class="action-row"><span class="action-lbl">Dictionary</span><span class="action-val variable">Dictionary ▾</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption">Second "Get Value" block — key is <b>duration</b>.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 8 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 8</div>
+  <div class="step-content">
+    <div class="step-title">Add a third "Get Value for Key" — key = "calories"</div>
+    <div class="step-desc">Tap <b>+</b> once more. Add <b>Get Value for Key in Dictionary</b> again. Key = <b>calories</b>, Dictionary = Dictionary.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:480px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#ff9500;font-size:11px;">📖 Get Dictionary from Input</div>
+        </div>
+        <div class="plus-row">·</div>
+        <div class="action-block">
+          <div class="action-hdr" style="background:#ff9500;font-size:11px;">📖 Get Value for Key in Dictionary</div>
+          <div class="action-body">
+            <div class="action-row"><span class="action-lbl" style="font-size:11px;">Key</span><span class="action-val" style="font-size:11px;">start</span></div>
+            <div class="action-row"><span class="action-lbl" style="font-size:11px;">Dictionary</span><span class="action-val variable" style="font-size:10px;">Dictionary ▾</span></div>
+          </div>
+        </div>
+        <div class="plus-row">·</div>
+        <div class="action-block">
+          <div class="action-hdr" style="background:#ff9500;font-size:11px;">📖 Get Value for Key in Dictionary</div>
+          <div class="action-body">
+            <div class="action-row"><span class="action-lbl" style="font-size:11px;">Key</span><span class="action-val" style="font-size:11px;">duration</span></div>
+            <div class="action-row"><span class="action-lbl" style="font-size:11px;">Dictionary</span><span class="action-val variable" style="font-size:10px;">Dictionary ▾</span></div>
+          </div>
+        </div>
+        <div class="plus-row">·</div>
+        <div class="action-block" style="outline:2px solid #fc3d5a;outline-offset:1px;">
+          <div class="action-hdr" style="background:#ff9500;font-size:11px;">📖 Get Value for Key in Dictionary</div>
+          <div class="action-body">
+            <div class="action-row"><span class="action-lbl" style="font-size:11px;">Key</span><span class="action-val typing" style="font-size:11px;">calories</span></div>
+            <div class="action-row"><span class="action-lbl" style="font-size:11px;">Dictionary</span><span class="action-val variable" style="font-size:10px;">Dictionary ▾</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="callout blue"><b>Checkpoint:</b> You should now have <b>4 actions</b> stacked — Get Dictionary → Get Value (start) → Get Value (duration) → Get Value (calories).</div>
+  </div>
+</div>
+
+<!-- ─── STEP 9 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 9</div>
+  <div class="step-content">
+    <div class="step-title">Add "Log Workout"</div>
+    <div class="step-desc">Tap <b>+</b> below the last action. Search <b>Log Workout</b>. Tap <b>Log Workout</b> under the Health section.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:300px;">
+      <div class="nav26">
+        <span class="nav26-btn">Cancel</span>
+        <div class="search26" style="flex:1;margin:0 8px;"><span>🔍</span> Log Workout</div>
+      </div>
+      <div class="screen" style="background:white;">
+        <div style="padding:6px 14px;font-size:11px;color:#8e8e93;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Health</div>
+        <div class="result-row" style="background:#f0fdf4;position:relative;">
+          <div class="result-icon" style="background:#34c759;">🏃</div>
+          <div><div class="result-title">Log Workout</div><div class="result-sub">Health</div></div>
+          <span class="tap-badge pulse" style="margin-left:auto;">TAP THIS</span>
+        </div>
+        <div class="result-row">
+          <div class="result-icon" style="background:#34c759;">🏃</div>
+          <div><div class="result-title">Log Health Sample</div><div class="result-sub">Health</div></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption">Select <b>Log Workout</b> listed under Health — not "Log Health Sample".</div>
+  </div>
+</div>
+
+<!-- ─── STEP 10 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 10</div>
+  <div class="step-content">
+    <div class="step-title">Set Activity Type → Traditional Strength Training</div>
+    <div class="step-desc">Inside the Log Workout block, tap the <b>Activity</b> field. A picker slides up — scroll down to find <b>Traditional Strength Training</b> and tap it.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:420px;overflow:hidden;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#34c759;">🏃 Log Workout</div>
+          <div class="action-body">
+            <div class="action-row" style="background:#f0fdf4;">
+              <span class="action-lbl" style="font-weight:700;color:#34c759;">Activity ◀ tap</span>
+              <span class="action-val activity">Traditional Strength Training</span>
+            </div>
+            <div class="action-row"><span class="action-lbl">Start</span><span class="action-val" style="color:#aaa;font-size:11px;">set next…</span></div>
+            <div class="action-row"><span class="action-lbl">Duration</span><span class="action-val" style="color:#aaa;font-size:11px;">set next…</span></div>
+            <div class="action-row"><span class="action-lbl">Calories</span><span class="action-val" style="color:#aaa;font-size:11px;">set next…</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Picker sheet -->
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(242,242,247,.95);backdrop-filter:blur(20px);border-top:.5px solid rgba(0,0,0,.1);border-radius:16px 16px 0 0;">
+        <div style="text-align:center;padding:10px;font-size:13px;font-weight:700;color:#007aff;border-bottom:.5px solid rgba(0,0,0,.08);">Select Activity</div>
+        <div style="font-size:12px;padding:4px 0;max-height:150px;overflow:hidden;">
+          <div style="padding:8px 16px;color:#8e8e93;">Cross Training</div>
+          <div style="padding:8px 16px;color:#8e8e93;">Cycling</div>
+          <div style="padding:8px 16px;font-weight:700;color:#34c759;background:#f0fdf4;display:flex;justify-content:space-between;align-items:center;">Traditional Strength Training<span>✓</span></div>
+          <div style="padding:8px 16px;color:#8e8e93;">High Intensity Interval Training</div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption">Scroll the picker to find <b>Traditional Strength Training</b> and tap it.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 11 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 11</div>
+  <div class="step-content">
+    <div class="step-title">Set Start — clear default, tap variable icon, pick "start" output</div>
+    <div class="step-desc">Tap the <b>Start</b> field. A date picker appears — tap the <b>×</b> to clear it. A small variable icon appears in the field (looks like a grid or ⊞) — tap it. Select the variable labeled <b>Key: start</b>.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:420px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#34c759;font-size:12px;">🏃 Log Workout</div>
+          <div class="action-body">
+            <div class="action-row"><span class="action-lbl">Activity</span><span class="action-val activity" style="font-size:10px;">Traditional Strength Training</span></div>
+            <div class="action-row" style="background:#eff6ff;">
+              <span class="action-lbl" style="font-weight:700;color:#007aff;">Start ◀ tap</span>
+              <div style="display:flex;align-items:center;gap:5px;">
+                <span class="action-val" style="font-size:11px;color:#aaa;">5/23/26</span>
+                <span style="background:#fc3d5a;color:white;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;">×</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="callout yellow" style="margin:6px 12px 4px;font-size:12px;">Tap <b>×</b> to clear the date, then tap the <b>⊞ variable icon</b> that appears</div>
+        <div class="var-picker">
+          <div class="var-picker-hdr">Choose Variable</div>
+          <div class="var-item pick" style="position:relative;">
+            <div class="var-dot" style="background:#ff9500;"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;">Value for Key in Dictionary</div>
+              <div style="font-size:11px;color:#636366;">Key: start · from action 2</div>
+            </div>
+            <span class="tap-badge pulse">PICK THIS</span>
+          </div>
+          <div class="var-item">
+            <div class="var-dot" style="background:#ff9500;"></div>
+            <div><div style="font-size:12px;">Value for Key in Dictionary</div><div style="font-size:11px;color:#636366;">Key: duration · from action 3</div></div>
+          </div>
+          <div class="var-item">
+            <div class="var-dot" style="background:#ff9500;"></div>
+            <div><div style="font-size:12px;">Value for Key in Dictionary</div><div style="font-size:11px;color:#636366;">Key: calories · from action 4</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="callout red">Pick the one labeled <b>Key: start</b> — the first "Get Value" action you added. Do not pick duration or calories here.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 12 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 12</div>
+  <div class="step-content">
+    <div class="step-title">Set Duration — pick "duration" output, unit = Minutes</div>
+    <div class="step-desc">Tap the <b>Duration</b> field (some versions show <b>End Date</b> instead — treat it the same way). Clear → variable icon → pick <b>Key: duration</b>. Then tap the unit and set it to <b>Minutes</b>.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:380px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#34c759;font-size:12px;">🏃 Log Workout</div>
+          <div class="action-body">
+            <div class="action-row"><span class="action-lbl">Activity</span><span class="action-val activity" style="font-size:10px;">Traditional Strength Training</span></div>
+            <div class="action-row"><span class="action-lbl">Start</span><span class="action-val done" style="font-size:10px;">start ✓</span></div>
+            <div class="action-row" style="background:#eff6ff;">
+              <span class="action-lbl" style="font-weight:700;color:#007aff;">Duration ◀ tap</span>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <span class="action-val variable" style="font-size:10px;">duration value</span>
+                <span style="background:#5856d6;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;">Min</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="var-picker" style="margin-top:6px;">
+          <div class="var-picker-hdr">Choose Variable</div>
+          <div class="var-item">
+            <div class="var-dot" style="background:#ff9500;"></div>
+            <div><div style="font-size:12px;">Value for Key in Dictionary</div><div style="font-size:11px;color:#636366;">Key: start</div></div>
+          </div>
+          <div class="var-item pick" style="position:relative;">
+            <div class="var-dot" style="background:#ff9500;"></div>
+            <div style="flex:1;"><div style="font-size:12px;font-weight:700;">Value for Key in Dictionary</div><div style="font-size:11px;color:#636366;">Key: duration · from action 3</div></div>
+            <span class="tap-badge pulse">PICK THIS</span>
+          </div>
+          <div class="var-item">
+            <div class="var-dot" style="background:#ff9500;"></div>
+            <div><div style="font-size:12px;">Value for Key in Dictionary</div><div style="font-size:11px;color:#636366;">Key: calories</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="callout yellow">After selecting the variable, tap the unit label and change it to <b>Minutes</b>.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 13 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 13</div>
+  <div class="step-content">
+    <div class="step-title">Set Active Energy Burned — pick "calories" output, unit = Cal</div>
+    <div class="step-desc">Tap the <b>Active Energy Burned</b> (or Calories) field. Clear → variable icon → pick <b>Key: calories</b>. Change the unit to <b>Cal</b>.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:340px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#34c759;font-size:12px;">🏃 Log Workout</div>
+          <div class="action-body">
+            <div class="action-row"><span class="action-lbl">Activity</span><span class="action-val activity" style="font-size:10px;">Traditional Strength Training</span></div>
+            <div class="action-row"><span class="action-lbl">Start</span><span class="action-val done" style="font-size:10px;">start ✓</span></div>
+            <div class="action-row"><span class="action-lbl">Duration</span><span class="action-val done" style="font-size:10px;">duration ✓ <b>Min</b></span></div>
+            <div class="action-row" style="background:#eff6ff;">
+              <span class="action-lbl" style="font-weight:700;color:#007aff;">Calories ◀ tap</span>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <span class="action-val variable" style="font-size:10px;">calories value</span>
+                <span style="background:#ff3b30;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;">Cal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="callout green">✓ Activity &nbsp;✓ Start &nbsp;✓ Duration &nbsp;✓ Calories — all four fields are now set.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 14 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 14 · Optional</div>
+  <div class="step-content">
+    <div class="step-title">Add a "Show Notification" confirmation</div>
+    <div class="step-desc">Tap <b>+</b> below Log Workout → search <b>Show Notification</b> → add it. Set the message to: <b>Logged to Apple Health ✓</b>. This shows on your lock screen so you know it worked.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:260px;">
+      <div class="nav26">
+        <span class="nav26-btn">✕</span>
+        <span class="nav26-title">New Shortcut</span>
+      </div>
+      <div class="screen">
+        <div class="action-block">
+          <div class="action-hdr" style="background:#34c759;font-size:11px;">🏃 Log Workout ✓ all fields set</div>
+        </div>
+        <div class="plus-row">·</div>
+        <div class="action-block">
+          <div class="action-hdr" style="background:#007aff;font-size:12px;">🔔 Show Notification</div>
+          <div class="action-body">
+            <div class="action-row">
+              <span class="action-lbl">Body</span>
+              <span class="action-val" style="font-size:11px;">Logged to Apple Health ✓</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ─── STEP 15 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 15</div>
+  <div class="step-content">
+    <div class="step-title">Name it "WW Health" and tap Done</div>
+    <div class="step-desc">Tap the <b>name field at the very top</b> of the editor (shows "New Shortcut"). Type exactly <b>WW Health</b> — capital W, capital H, one space. Tap <b>Done</b>. Then tap <b>← back arrow</b> to exit and save.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:340px;background:#f2f2f7;">
+      <div class="nav26">
+        <span class="nav26-btn" style="opacity:.4;">✕</span>
+        <div style="flex:1;margin:0 8px;">
+          <div style="background:white;border:1.5px solid #007aff;border-radius:10px;padding:4px 10px;font-size:14px;font-weight:700;display:flex;align-items:center;">
+            WW Health<span class="cursor"></span>
+          </div>
+        </div>
+        <span class="nav26-btn-bold">Done</span>
+      </div>
+      <div class="screen" style="padding:6px 0;">
+        <div style="padding:4px 0;text-align:center;font-size:10px;color:#8e8e93;">← your 5–6 actions below</div>
+        <div class="action-block"><div class="action-hdr" style="background:#ff9500;font-size:11px;">📖 Get Dictionary from Input</div></div>
+        <div class="plus-row" style="font-size:14px;">·</div>
+        <div class="action-block"><div class="action-hdr" style="background:#ff9500;font-size:11px;">📖 Get Value · start</div></div>
+        <div class="plus-row" style="font-size:14px;">·</div>
+        <div class="action-block"><div class="action-hdr" style="background:#ff9500;font-size:11px;">📖 Get Value · duration</div></div>
+        <div class="plus-row" style="font-size:14px;">·</div>
+        <div class="action-block"><div class="action-hdr" style="background:#ff9500;font-size:11px;">📖 Get Value · calories</div></div>
+        <div class="plus-row" style="font-size:14px;">·</div>
+        <div class="action-block"><div class="action-hdr" style="background:#34c759;font-size:11px;">🏃 Log Workout ✓</div></div>
+      </div>
+    </div></div>
+    <div class="callout red">Name must be exactly <code>WW Health</code> — capital W, capital H, one space. Case-sensitive.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 16 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 16</div>
+  <div class="step-content">
+    <div class="step-title">The shortcut appears on your home screen</div>
+    <div class="step-desc">After tapping Done and going back, <b>WW Health</b> appears as a tile in your Shortcuts app. The shortcut is built and ready.</div>
+    <div class="phone"><div class="phone-inner" style="min-height:320px;background:#f2f2f7;">
+      <div class="nav26" style="padding-top:14px;">
+        <span class="nav26-btn">Gallery</span>
+        <span class="nav26-title">Shortcuts</span>
+        <span class="nav26-btn-bold" style="font-size:22px;">+</span>
+      </div>
+      <div class="tile-grid">
+        <div class="tile" style="background:#34c759;">Morning Routine</div>
+        <div class="tile" style="background:#ff9500;">Focus Mode</div>
+        <div class="tile" style="background:linear-gradient(135deg,#fc3d5a,#c026d3);position:relative;">
+          ❤️ WW Health
+          <div class="pulse" style="position:absolute;inset:-3px;border:2.5px solid #fc3d5a;border-radius:18px;"></div>
+        </div>
+        <div class="tile" style="background:#5ac8fa;">Log Water</div>
+      </div>
+    </div></div>
+    <div class="caption"><b>WW Health</b> is now on your Shortcuts home screen and ready to run.</div>
+  </div>
+</div>
+
+<!-- ─── STEP 17 ─── -->
+<div class="step-section">
+  <div class="step-label">Step 17 · First Run</div>
+  <div class="step-content">
+    <div class="step-title">Complete a workout → tap LOG TO APPLE HEALTH → allow both prompts</div>
+    <div class="step-desc">Go to Workout Widget. Complete a workout and tap the red <b>LOG TO APPLE HEALTH</b> button on the completion screen. Two one-time permission dialogs will appear.</div>
+
+    <div style="margin-bottom:18px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#636366;">① Shortcut permission dialog:</div>
+      <div class="phone"><div class="phone-inner" style="min-height:300px;background:#3a3a3c;">
+        <div class="dim">
+          <div class="dialog26">
+            <div class="dialog26-icon">🔗</div>
+            <div class="dialog26-title">"Workout Widget" wants to open "WW Health"</div>
+            <div class="dialog26-body">This will run the shortcut and log your workout.</div>
+            <div class="dialog26-btns">
+              <button class="dbtn always" style="position:relative;">Always Allow <span class="tap-badge pulse" style="position:absolute;top:-10px;right:-6px;">TAP THIS</span></button>
+              <button class="dbtn once">Allow Once</button>
+              <button class="dbtn deny">Don't Allow</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="callout green">Tap <b>Always Allow</b> — not "Allow Once". This prevents the prompt from reappearing every workout.</div>
+    </div>
+
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#636366;">② Apple Health access dialog:</div>
+      <div class="phone"><div class="phone-inner" style="min-height:360px;">
+        <div class="nav26">
+          <span class="nav26-btn">Cancel</span>
+          <span class="nav26-title" style="font-size:13px;">Health Access</span>
+          <span class="nav26-btn-bold" style="position:relative;">Allow <span class="tap-badge pulse" style="position:absolute;top:-10px;right:-28px;">TAP</span></span>
+        </div>
+        <div style="padding:14px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div style="width:38px;height:38px;background:linear-gradient(135deg,#fc3d5a,#c026d3);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">❤️</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;">WW Health</div>
+              <div style="font-size:11px;color:#636366;">would like to access Health data</div>
+            </div>
+          </div>
+          <div style="background:#f2f2f7;border-radius:12px;overflow:hidden;font-size:13px;">
+            <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #e5e5ea;">
+              <span>Workouts</span><span style="color:#34c759;font-weight:700;">Write ✓</span>
+            </div>
+            <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+              <span>Active Energy</span><span style="color:#34c759;font-weight:700;">Write ✓</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;background:#007aff;border-radius:12px;padding:12px;text-align:center;color:white;font-weight:700;font-size:14px;">Allow</div>
+        </div>
+      </div></div>
+      <div class="callout green">Tap <b>Allow</b> to grant Workouts and Active Energy write access. One-time only.</div>
+    </div>
+
+    <div class="callout blue" style="margin-top:14px;">
+      ✅ After both prompts the shortcut runs silently on every future workout.<br><br>
+      Your workout will appear in <b>Health app → Browse → Activity → Workouts</b>.
+    </div>
+  </div>
+</div>
+
+<div style="padding:28px 20px;text-align:center;color:#8e8e93;font-size:12px;line-height:1.7;">
+  This shortcut only works on iPhone and iPad.<br>
+  To use a custom shortcut name: in Workout Widget tap your<br>
+  <b>avatar → Apple Health → name field at bottom → Save & Done</b>.<br>
+  The shortcut name must match exactly.
+</div>
+
+</body>
+</html>

@@ -2185,6 +2185,12 @@ function LibraryTab({exercises,setEx,showToast,onDemo,muscleGroups:customGroups,
   const [showAdd,     setShowAdd]     = useState(false);      // admin only
   const [showRequest, setShowRequest] = useState(false);     // users
   const [exDeleteConfirm, setExDeleteConfirm] = useState(null); // exercise to confirm-delete
+  const contentRef = React.useRef(null);
+
+  // Scroll list back to top whenever filter or search changes
+  React.useEffect(function() {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  }, [filter, search]);
 
   const filtered = exercises.filter(function(e) {
     return (filter==="All" || e.category===filter) &&
@@ -2207,7 +2213,7 @@ function LibraryTab({exercises,setEx,showToast,onDemo,muscleGroups:customGroups,
     ),
 
     // ── Content ────────────────────────────────────────────────
-    React.createElement("div",{className:"content",style:{paddingTop:4}},
+    React.createElement("div",{ref:contentRef,className:"content",style:{paddingTop:4}},
       // Filter chips
       React.createElement("div",{className:"chip-row"},
         ["All",...(customGroups||MUSCLE_GROUPS)].map(function(c){
@@ -2220,7 +2226,8 @@ function LibraryTab({exercises,setEx,showToast,onDemo,muscleGroups:customGroups,
       ),
       React.createElement("div",{className:"sec"},filtered.length," EXERCISES"),React.createElement("button",{style:{width:"100%",padding:"12px 14px",marginBottom:12,background:"rgba(255,184,0,0.12)",border:"2px solid var(--acc3)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",color:"#996600",fontWeight:700,fontSize:14,fontFamily:"var(--fb)"},onClick:function(){return setShowRequest(true);}},"✋ Can't find an exercise? Request one!"),
 
-      // Exercise list
+      // Exercise list — key on fragment forces full replacement when filter changes
+      React.createElement(React.Fragment,{key:filter+"|"+search},
       filtered.map(function(ex){
         return React.createElement("div",{key:ex.id,className:"ex-item",onClick:function(){return onDemo(ex.id);}},
           React.createElement("span",{className:"ex-dot",style:{background:cc(ex.category)}}),
@@ -2246,6 +2253,7 @@ function LibraryTab({exercises,setEx,showToast,onDemo,muscleGroups:customGroups,
 
       filtered.length===0 && React.createElement("div",{className:"empty",style:{padding:"36px 20px"}},
         React.createElement("p",null,"No exercises found.")
+      )
       ),
 
       // Request exercise panel - shown to ALL users

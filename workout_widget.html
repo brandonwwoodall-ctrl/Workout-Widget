@@ -916,7 +916,7 @@ function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,show
   const [schedule,setSchedule]=useStorage("ww-schedule",{});
   const userInitial=(session?.username||"?")[0].toUpperCase();
 
-  const startWorkout=w=>{setActive({workoutId:w.id,workoutName:w.name,muscleGroups:w.muscleGroups||[],startedAt:Date.now(),log:w.exercises.map(e=>{var exDef=exercises.find(x=>x.id===e.id);var isC=exDef&&exDef.category==="Cardio";return {exId:e.id,sets:Array.from({length:isC?1:e.sets||3},()=>isC?{distance:e.distance||0,time:e.time||30,level:e.level||1,done:false}:{reps:e.reps||10,weight:e.weight||0,done:false});};})});onTab("active");showToast("Let's go!");};
+  const startWorkout=w=>{setActive({workoutId:w.id,workoutName:w.name,muscleGroups:w.muscleGroups||[],startedAt:Date.now(),log:w.exercises.map(e=>{var exDef=exercises.find(x=>x.id===e.id);var isC=exDef&&exDef.category==="Cardio";return {exId:e.id,sets:Array.from({length:isC?1:e.sets||3},()=>isC?{distance:e.distance||0,time:e.time||30,level:e.level||1,done:false}:{reps:e.reps||10,weight:e.weight||0,done:false})};})});onTab("active");showToast("Let's go!");};
 
   return React.createElement(React.Fragment,null,
     React.createElement("div",{className:"hdr"},

@@ -737,9 +737,9 @@ function migrateKgToLbs() {
 }
 migrateKgToLbs();
 (function(){
-  if(localStorage.getItem("ww-clean-v1"))return;
-  ["ww-ex4","ww-mg1","ww-ex-v3","ww-ex-v5","ww-ex-v6","ww-ex-v7","ww-ex-v8","ww-ex-v9","ww-mg-v1","ww-ex-compact","ww-stripped-defaults","ww-wo-v2"].forEach(function(k){localStorage.removeItem(k);});
-  localStorage.setItem("ww-clean-v1","1");
+  if(localStorage.getItem("ww-clean-v2"))return;
+  ["ww-ex4","ww-mg1","ww-ex-v3","ww-ex-v5","ww-ex-v6","ww-ex-v7","ww-ex-v8","ww-ex-v9","ww-mg-v1","ww-ex-compact","ww-stripped-defaults","ww-wo-v2","ww-clean-v1"].forEach(function(k){localStorage.removeItem(k);});
+  localStorage.setItem("ww-clean-v2","1");
 })();
 
 
@@ -2012,7 +2012,6 @@ function LibraryTab({exercises,setEx,showToast,onDemo,muscleGroups:customGroups,
   const [search,      setSearch]      = useState("");
   const [showAdd,     setShowAdd]     = useState(false);      // admin only
   const [showRequest, setShowRequest] = useState(false);     // users
-  const [exDeleteConfirm, setExDeleteConfirm] = useState(null); // exercise to confirm-delete
   const contentRef = React.useRef(null);
 
   // Scroll list back to top whenever filter or search changes
@@ -2067,15 +2066,7 @@ function LibraryTab({exercises,setEx,showToast,onDemo,muscleGroups:customGroups,
           React.createElement("button",{
             className:"btn-info",
             onClick:function(e){e.stopPropagation();return onDemo(ex.id);}
-          },React.createElement(Ic.Info)),
-          // Delete button ONLY for admin
-          isAdmin && React.createElement("button",{
-            className:"btn-del",
-            onClick:function(e){
-              e.stopPropagation();
-              setExDeleteConfirm(ex);
-            }
-          },React.createElement(Ic.Trash))
+          },React.createElement(Ic.Info))
         );
       }),
 
@@ -2112,18 +2103,6 @@ function LibraryTab({exercises,setEx,showToast,onDemo,muscleGroups:customGroups,
       session:session
     }),
 
-    // Custom exercise delete confirmation
-    exDeleteConfirm && React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}},
-      React.createElement("div",{style:{background:"var(--card)",borderRadius:18,padding:28,maxWidth:320,width:"100%",boxShadow:"0 12px 48px rgba(0,0,0,0.55)",border:"2px solid #CC1A2A"}},
-        React.createElement("div",{style:{fontSize:36,textAlign:"center",marginBottom:12}},"🗑️"),
-        React.createElement("div",{style:{fontWeight:700,fontSize:18,textAlign:"center",marginBottom:8,color:"#CC1A2A"}},"Delete Exercise?"),
-        React.createElement("div",{style:{fontSize:14,color:"var(--text)",textAlign:"center",marginBottom:22}},'"',exDeleteConfirm.name,'" will be permanently removed from the library.'),
-        React.createElement("div",{style:{display:"flex",gap:10}},
-          React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"2px solid #A8B8D8",background:"#E8EEFF",color:"#0A0F2C",fontWeight:700,fontSize:14,cursor:"pointer"},onClick:function(){setExDeleteConfirm(null);}},"No, Keep It"),
-          React.createElement("button",{style:{flex:1,padding:"12px 0",borderRadius:10,border:"none",background:"#CC1A2A",color:"#ffffff",fontWeight:700,fontSize:15,cursor:"pointer"},onClick:function(){setEx(function(es){return es.filter(function(x){return x.id!==exDeleteConfirm.id;});});showToast("Exercise deleted");setExDeleteConfirm(null);}},"Yes, Delete")
-        )
-      )
-    )
   );
 }
 
@@ -2787,7 +2766,7 @@ function AdminPortal({exercises,setEx,onClose,showToast,muscleGroups,setMuscleGr
       React.createElement("button",{style:{flex:1,padding:"10px 8px",borderRadius:10,border:"1px solid var(--acc)",background:"var(--s1)",color:"var(--acc)",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6},onClick:function(){var b={};for(var k of Object.keys(localStorage)){if(k.startsWith("ww-"))b[k]=localStorage.getItem(k);}b["_exported"]=new Date().toISOString();b["_version"]="woody-backup-v1";var blob=new Blob([JSON.stringify(b,null,2)],{type:"application/json"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download="woodys-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);showToast("Backup downloaded!");}},"BACKUP DATA"),
       React.createElement("label",{style:{flex:1,padding:"10px 8px",borderRadius:10,border:"1px solid var(--acc3)",background:"var(--s1)",color:"var(--acc3)",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}},
         "RESTORE",
-        React.createElement("input",{type:"file",accept:".json",style:{display:"none"},onChange:function(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){try{var data=JSON.parse(ev.target.result);if(!data._version||!data._version.startsWith("woody-backup")){showToast("Invalid backup file!");return;}var count=0;for(var k of Object.keys(data)){if(k.startsWith("ww-")){localStorage.setItem(k,data[k]);count++;}}showToast("Restored "+count+" items! Reloading...");setTimeout(function(){window.location.reload();},1500);}catch(err){showToast("Restore failed: "+err.message);}};reader.readAsText(file);e.target.value="";}})
+        React.createElement("input",{type:"file",accept:".json",style:{display:"none"},onChange:function(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){try{var data=JSON.parse(ev.target.result);if(!data._version||!data._version.startsWith("woody-backup")){showToast("Invalid backup file!");return;}var skipKeys=new Set(["ww-ex4","ww-mg1","ww-ex-v3","ww-ex-v5","ww-ex-v6","ww-ex-v7","ww-ex-v8","ww-ex-v9","ww-mg-v1","ww-ex-compact","ww-stripped-defaults","ww-wo-v2","ww-clean-v1","ww-clean-v2"]);var count=0;for(var k of Object.keys(data)){if(k.startsWith("ww-")&&!skipKeys.has(k)){localStorage.setItem(k,data[k]);count++;}}showToast("Restored "+count+" items! Reloading...");setTimeout(function(){window.location.reload();},1500);}catch(err){showToast("Restore failed: "+err.message);}};reader.readAsText(file);e.target.value="";}})
       )
     ),
 

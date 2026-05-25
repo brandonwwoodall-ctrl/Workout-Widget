@@ -220,6 +220,7 @@ const Ic = {
   Edit:    () => React.createElement("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",style:{width:15,height:15}},React.createElement("path",{d:"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"}),React.createElement("path",{d:"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"})),
   Info:    () => React.createElement("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",style:{width:17,height:17}},React.createElement("circle",{cx:"12",cy:"12",r:"10"}),React.createElement("line",{x1:"12",y1:"16",x2:"12",y2:"12"}),React.createElement("line",{x1:"12",y1:"8",x2:"12.01",y2:"8"})),
   Shield:  () => React.createElement("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",style:{width:20,height:20}},React.createElement("path",{d:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"})),
+  AppleHealth: () => React.createElement("svg",{viewBox:"0 0 24 24",fill:"currentColor",style:{width:18,height:18}},React.createElement("path",{d:"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z",fill:"#fc3d5a"})),
   Lock:    () => React.createElement("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",style:{width:32,height:32}},React.createElement("rect",{x:"3",y:"11",width:"18",height:"11",rx:"2"}),React.createElement("path",{d:"M7 11V7a5 5 0 0 1 10 0v4"})),
   User:    () => React.createElement("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",style:{width:20,height:20}},React.createElement("path",{d:"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"}),React.createElement("circle",{cx:"12",cy:"7",r:"4"})),
   Chart:   () => React.createElement("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",style:{width:20,height:20}},React.createElement("line",{x1:"18",y1:"20",x2:"18",y2:"10"}),React.createElement("line",{x1:"12",y1:"20",x2:"12",y2:"4"}),React.createElement("line",{x1:"6",y1:"20",x2:"6",y2:"14"}),React.createElement("line",{x1:"2",y1:"20",x2:"22",y2:"20"})),
@@ -770,8 +771,9 @@ function MiniChart({data,color}) {
 }
 
 // ─── PROFILE TAB ──────────────────────────────────────────────────────────────
-function ProfileTab({session,recentlyDeleted,setRecentlyDeleted,history,setHistory,showToast}) {
-  const [confirmPerm, setConfirmPerm] = useState(null); // item to permanently delete
+function ProfileTab({session,recentlyDeleted,setRecentlyDeleted,history,setHistory,showToast,isAdmin,onAdmin}) {
+  const [confirmPerm, setConfirmPerm] = useState(null);
+  const [showHealthGuide, setShowHealthGuide] = useState(false);
   const fmt=function(iso){var d=new Date(iso);return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
   const timeLeft=function(iso){var ms=new Date(iso).getTime()+48*60*60*1000-Date.now();if(ms<=0)return"Expired";var h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return h+"h "+m+"m left";};
 
@@ -810,6 +812,9 @@ function ProfileTab({session,recentlyDeleted,setRecentlyDeleted,history,setHisto
       )
     ),
     React.createElement("div",{className:"content"},
+      showHealthGuide&&React.createElement(HealthGuideModal,{onClose:function(){setShowHealthGuide(false);}}),
+      isAdmin&&React.createElement("button",{style:{width:"100%",marginBottom:10,padding:"11px 0",borderRadius:10,border:"1.5px solid var(--acc)",background:"none",color:"var(--acc)",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8},onClick:function(){onAdmin&&onAdmin();}},React.createElement(Ic.Shield)," Admin Portal"),
+      React.createElement("button",{style:{width:"100%",marginBottom:10,padding:"11px 0",borderRadius:10,border:"1.5px solid #fc3d5a",background:"none",color:"#fc3d5a",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8},onClick:function(){setShowHealthGuide(true);}},React.createElement(Ic.AppleHealth)," Apple Health Setup"),
       React.createElement("button",{style:{width:"100%",marginBottom:16,padding:"11px 0",borderRadius:10,border:"1.5px solid var(--danger)",background:"none",color:"var(--danger)",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8},onClick:function(){localStorage.removeItem("ww-session");window.location.reload();}},React.createElement(Ic.LogOut)," Sign Out"),
       React.createElement("div",{className:"sec",style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}},
         React.createElement("span",null,React.createElement(Ic.Trash)," RECENTLY DELETED"),
@@ -890,7 +895,7 @@ function App() {
       tab==="active"   && React.createElement(ActiveTab,{active,setActive,exercises,history,setHistory,onTab:setTab,showToast,onDemo:setDemo,weightUnit,setWeightUnit}),
       tab==="history"  && React.createElement(HistoryTab,{history,setHistory,exercises,onProgress:setProgEx,recentlyDeleted,setRecentlyDeleted}),
       tab==="library"  && React.createElement(LibraryTab,{exercises,setEx,showToast,onDemo:setDemo,muscleGroups,session,isAdmin}),
-      tab==="profile"  && React.createElement(ProfileTab,{session,recentlyDeleted,setRecentlyDeleted,history,setHistory,showToast}),
+      tab==="profile"  && React.createElement(ProfileTab,{session,recentlyDeleted,setRecentlyDeleted,history,setHistory,showToast,isAdmin,onAdmin:()=>setShowAdmin(true)}),
       React.createElement("nav",{className:"tabbar"},
         TABS.map(t=>React.createElement("button",{key:t.id,className:"tb"+(tab===t.id?" on":""),onClick:()=>setTab(t.id)},React.createElement(t.I),t.label))
       ),
@@ -921,7 +926,6 @@ function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,show
           React.createElement("button",{className:"btn-icon",title:theme==="dark"?"Light mode":"Dark mode",onClick:()=>setTheme(t=>t==="dark"?"light":"dark"),style:{fontSize:16}},theme==="dark"?"☀️":"🌙"),
           React.createElement("button",{className:"btn-icon",title:"Weekly Schedule",onClick:()=>setShowSchedule(s=>!s),style:{fontSize:16,background:showSchedule?"var(--acc)":"",color:showSchedule?"#fff":""}},"📅"),
           React.createElement("button",{className:"btn-icon",onClick:()=>{setEditW(null);setShowCreate(true);}},React.createElement(Ic.Plus)),
-          session.isAdmin&&React.createElement("button",{className:"btn-icon",title:"Admin Portal",onClick:()=>{onAdmin&&onAdmin();}},React.createElement(Ic.Shield)),
           React.createElement("button",{className:"btn-icon",title:"Profile",onClick:()=>onTab("profile"),style:{padding:0,overflow:"hidden",border:"2px solid var(--acc)"}},
             React.createElement("div",{style:{width:"100%",height:"100%",background:"var(--acc)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--fh)",fontSize:16,color:"#fff",letterSpacing:1}},userInitial)
           )
@@ -944,7 +948,7 @@ function WorkoutsTab({workouts,setWorkouts,exercises,active,setActive,onTab,show
                   React.createElement("h3",{style:{color:"#fff",margin:0}},"TODAY'S WORKOUT"),
                   React.createElement("p",{style:{color:"rgba(255,255,255,.8)",margin:0}},todayWo.name)
                 ),
-                React.createElement("button",{className:"btn-acc",style:{background:"rgba(255,255,255,.25)",border:"1.5px solid rgba(255,255,255,.5)",color:"#fff",flexShrink:0,padding:"8px 14px",fontSize:12},onClick:function(){startWorkout(todayWo);}},React.createElement(Ic.Play)," Start")
+                React.createElement("button",{style:{background:"rgba(255,255,255,.25)",border:"1.5px solid rgba(255,255,255,.5)",color:"#fff",flexShrink:0,padding:"4px 8px",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontSize:11,fontWeight:700,fontFamily:"var(--fb)"},onClick:function(){startWorkout(todayWo);}},React.createElement(Ic.Play)," GO")
               )
             );
           })(),
@@ -1174,6 +1178,65 @@ function WorkoutEditor({workout,exercises,onSave,onClose,onDemo,muscleGroups:cus
 }
 
 // ─── COMPLETION SCREEN ────────────────────────────────────────────────────────
+
+// ─── APPLE HEALTH BRIDGE ──────────────────────────────────────────────────────
+function logToAppleHealth(data) {
+  var sc = localStorage.getItem("ww-ahsc") || "WW Health";
+  var muscleGroups = data.muscleGroups || [];
+  var isHIIT = muscleGroups.some(function(g){return g==="HIIT"||g==="Cardio";});
+  var type = isHIIT ? "High Intensity Interval Training" : "Traditional Strength Training";
+  var dur  = Math.max(data.duration||1, 1);
+  var cal  = Math.round((isHIIT?8.0:5.5) * 75 * (dur/60));
+  var sets = data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).length;},0);
+  var vol  = data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps||0)*(s.weight||0);},0);},0);
+  var payload = JSON.stringify({name:data.workoutName,duration:dur,calories:cal,type:type,sets:sets,volume:Math.round(vol),date:data.date});
+  window.location.href = "shortcuts://run-shortcut?name="+encodeURIComponent(sc)+"&input=text&text="+encodeURIComponent(payload);
+}
+
+function HealthGuideModal({onClose}) {
+  var [name, setName] = useState(localStorage.getItem("ww-ahsc")||"WW Health");
+  var steps = [
+    {n:1, title:"Open Shortcuts app", detail:'Tap "+" to create a new Shortcut.'},
+    {n:2, title:'Add "Get Dictionary from Input"', detail:'Tap Add Action → search "Get Dictionary from Input" → add it.'},
+    {n:3, title:'Add "Log Workout"', detail:'Search "Log Workout" → add it. Set Duration to dictionary key "duration" (Minutes) and Calories to key "calories" (Cal).'},
+    {n:4, title:'Add "Show Notification" (optional)', detail:'Adds a "Logged to Apple Health ✓" confirmation.'},
+    {n:5, title:'Name the Shortcut', detail:'Tap the title at the top → name it exactly "WW Health" (or your custom name below).'},
+  ];
+  return React.createElement("div",{style:{position:"fixed",inset:0,zIndex:95,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"flex-end"},onClick:function(e){if(e.target===e.currentTarget)onClose();}},
+    React.createElement("div",{style:{background:"var(--card)",borderRadius:"20px 20px 0 0",width:"100%",maxHeight:"88vh",overflowY:"auto",padding:"22px 18px 44px"}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+          React.createElement("div",{style:{width:38,height:38,borderRadius:11,background:"linear-gradient(135deg,#fc3d5a,#ff2d55)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}},"❤️"),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,letterSpacing:.3}},"APPLE HEALTH SETUP"),
+            React.createElement("div",{style:{fontSize:11,color:"var(--muted)"}},"One-time iOS Shortcuts setup")
+          )
+        ),
+        React.createElement("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:22,color:"var(--muted)",lineHeight:1},onClick:onClose},"×")
+      ),
+      React.createElement("div",{className:"card",style:{marginBottom:14,padding:"10px 12px",background:"var(--s1)"}},
+        React.createElement("p",{style:{fontSize:12,color:"var(--muted)",lineHeight:1.65,margin:0}},"Apple Health only allows native apps to write data. This works via iOS Shortcuts — a companion Shortcut receives your workout data and logs it to Apple Health.")
+      ),
+      React.createElement("div",{className:"sec",style:{marginBottom:10}},"SETUP STEPS (iPhone/iPad only)"),
+      steps.map(function(s){
+        return React.createElement("div",{key:s.n,style:{display:"flex",gap:12,marginBottom:12}},
+          React.createElement("div",{style:{width:26,height:26,borderRadius:"50%",background:"var(--acc)",color:"#fff",fontFamily:"var(--fh)",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2}},s.n),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:700,fontSize:13,marginBottom:2}},s.title),
+            React.createElement("div",{style:{fontSize:12,color:"var(--muted)",lineHeight:1.55}},s.detail)
+          )
+        );
+      }),
+      React.createElement("div",{style:{marginTop:18,marginBottom:6}},
+        React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--muted)",letterSpacing:.5,marginBottom:6}},"YOUR SHORTCUT NAME"),
+        React.createElement("input",{value:name,onChange:function(e){setName(e.target.value);},placeholder:"WW Health",style:{width:"100%",padding:"10px 12px",borderRadius:9,border:"1.5px solid var(--border2)",background:"var(--s1)",color:"var(--text)",fontSize:14,fontFamily:"var(--fb)",boxSizing:"border-box",outline:"none"}}),
+        React.createElement("div",{style:{fontSize:11,color:"var(--dim)",marginTop:3}},"Must match the Shortcut name exactly (case-sensitive).")
+      ),
+      React.createElement("button",{className:"btn-acc",style:{marginTop:12,width:"100%",justifyContent:"center"},onClick:function(){if(name.trim()){localStorage.setItem("ww-ahsc",name.trim());}onClose();}},React.createElement(Ic.Check)," Save & Done")
+    )
+  );
+}
+
 function CompletionScreen({data,history,exercises,onDone}) {
   var prMap={};
   (history||[]).forEach(function(h){h.log.forEach(function(l){l.sets.filter(function(s){return s.done&&s.weight>0;}).forEach(function(s){if(!prMap[l.exId]||s.weight>prMap[l.exId])prMap[l.exId]=s.weight;});});});
@@ -1223,6 +1286,7 @@ function CompletionScreen({data,history,exercises,onDone}) {
           })
         );
       })(),
+      React.createElement("button",{className:"btn-acc",style:{background:"linear-gradient(135deg,#fc3d5a,#ff2d55)",marginBottom:10,width:"100%",justifyContent:"center"},onClick:function(){logToAppleHealth(data);}},React.createElement(Ic.AppleHealth)," LOG TO APPLE HEALTH"),
       React.createElement("button",{className:"btn-acc",onClick:onDone},React.createElement(Ic.Check)," SAVE & DONE")
     )
   );

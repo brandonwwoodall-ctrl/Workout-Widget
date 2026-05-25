@@ -1729,13 +1729,40 @@ function BadgesView({history,exercises,prMap,streak}) {
   var totalPRs=Object.keys(prMap).length;
   var uniqEx=new Set();history.forEach(function(h){h.log.forEach(function(l){uniqEx.add(l.exId);});});
   var uniqMg=new Set();history.forEach(function(h){(h.muscleGroups||[]).forEach(function(g){uniqMg.add(g);});});
+
+  // Monthly stats: months with 20+ workouts (≈ 5/week pace)
+  var moCounts={};
+  history.forEach(function(h){var d=new Date(h.date);var k=d.getFullYear()+"-"+d.getMonth();moCounts[k]=(moCounts[k]||0)+1;});
+  var compliantMonths=Object.keys(moCounts).filter(function(k){return moCounts[k]>=20;}).sort();
+  var totalMonths=compliantMonths.length;
+  var monthStreak=(function(){
+    if(!compliantMonths.length)return 0;
+    var now=new Date(),thisM=now.getFullYear()+"-"+now.getMonth();
+    var lastMd=new Date(now.getFullYear(),now.getMonth()-1,1),lastM=lastMd.getFullYear()+"-"+lastMd.getMonth();
+    var desc=compliantMonths.slice().reverse();
+    if(desc[0]!==thisM&&desc[0]!==lastM)return 0;
+    var n=1;
+    for(var i=1;i<desc.length;i++){var p1=desc[i-1].split("-").map(Number),p2=desc[i].split("-").map(Number);if(p1[0]*12+p1[1]-(p2[0]*12+p2[1])===1)n++;else break;}
+    return n;
+  })();
+
   var BADGES=[
-    {id:"s3",e:"🔥",name:"First Flame",desc:"3-day streak",cat:"Streak",earned:streak>=3},
-    {id:"s7",e:"🔥",name:"Fire Week",desc:"7-day streak",cat:"Streak",earned:streak>=7},
-    {id:"s14",e:"⚡",name:"Fortnight",desc:"14-day streak",cat:"Streak",earned:streak>=14},
-    {id:"s30",e:"🌙",name:"Month Strong",desc:"30-day streak",cat:"Streak",earned:streak>=30},
-    {id:"s60",e:"☄️",name:"Two Months",desc:"60-day streak",cat:"Streak",earned:streak>=60},
-    {id:"s100",e:"💫",name:"Century Streak",desc:"100-day streak",cat:"Streak",earned:streak>=100},
+    // ── Streak (weekly, 5 workouts/week required) ──────────────
+    {id:"s1",e:"🔥",name:"First Spark",desc:"1-week streak (5/week)",cat:"Streak",earned:streak>=1},
+    {id:"s2",e:"🔥",name:"Fire Starter",desc:"2-week streak",cat:"Streak",earned:streak>=2},
+    {id:"s4",e:"⚡",name:"Monthly Warrior",desc:"4-week streak",cat:"Streak",earned:streak>=4},
+    {id:"s8",e:"🌙",name:"Two Month Run",desc:"8-week streak",cat:"Streak",earned:streak>=8},
+    {id:"s13",e:"☄️",name:"Quarter Strong",desc:"13-week streak (1 quarter)",cat:"Streak",earned:streak>=13},
+    {id:"s26",e:"💫",name:"Half Year",desc:"26-week streak",cat:"Streak",earned:streak>=26},
+    {id:"s52",e:"👑",name:"Year of Gains",desc:"52-week streak — full year",cat:"Streak",earned:streak>=52},
+    // ── Monthly (20+ workouts in a calendar month) ─────────────
+    {id:"m1",e:"📅",name:"Full Month",desc:"20+ workouts in 1 month",cat:"Monthly",earned:totalMonths>=1},
+    {id:"m2",e:"🔄",name:"Back to Back",desc:"2 consecutive full months",cat:"Monthly",earned:monthStreak>=2},
+    {id:"m3",e:"🗓️",name:"Quarter Grind",desc:"3 consecutive full months",cat:"Monthly",earned:monthStreak>=3},
+    {id:"m6",e:"🏅",name:"6-Month Streak",desc:"6 consecutive full months",cat:"Monthly",earned:monthStreak>=6},
+    {id:"m12",e:"🏆",name:"Year Warrior",desc:"12 consecutive full months",cat:"Monthly",earned:monthStreak>=12},
+    {id:"mt6",e:"⭐",name:"6 Active Months",desc:"Any 6 months with 20+ workouts",cat:"Monthly",earned:totalMonths>=6},
+    // ── Workouts ───────────────────────────────────────────────
     {id:"w1",e:"🎯",name:"First Step",desc:"First workout logged",cat:"Workouts",earned:totalW>=1},
     {id:"w10",e:"💪",name:"Getting Started",desc:"10 workouts logged",cat:"Workouts",earned:totalW>=10},
     {id:"w25",e:"🏋️",name:"Committed",desc:"25 workouts",cat:"Workouts",earned:totalW>=25},
@@ -1743,27 +1770,30 @@ function BadgesView({history,exercises,prMap,streak}) {
     {id:"w100",e:"🥇",name:"Century Club",desc:"100 workouts",cat:"Workouts",earned:totalW>=100},
     {id:"w250",e:"⚡",name:"Elite",desc:"250 workouts",cat:"Workouts",earned:totalW>=250},
     {id:"w500",e:"👑",name:"Legend",desc:"500 workouts",cat:"Workouts",earned:totalW>=500},
+    // ── Volume ─────────────────────────────────────────────────
     {id:"st100",e:"✅",name:"100 Sets",desc:"100 total sets done",cat:"Volume",earned:totalSets>=100},
     {id:"st500",e:"💯",name:"500 Club",desc:"500 sets done",cat:"Volume",earned:totalSets>=500},
     {id:"st1k",e:"💥",name:"1K Sets",desc:"1000 sets done",cat:"Volume",earned:totalSets>=1000},
     {id:"st5k",e:"🔥",name:"5K Sets",desc:"5000 sets done",cat:"Volume",earned:totalSets>=5000},
     {id:"v1k",e:"📦",name:"First Load",desc:"1000 lbs volume",cat:"Volume",earned:totalVol>=1000},
-    {id:"v10k",e:"🚛",name:"Heavy Hauler",desc:"10000 lbs",cat:"Volume",earned:totalVol>=10000},
-    {id:"v100k",e:"🏗️",name:"Iron Worker",desc:"100000 lbs",cat:"Volume",earned:totalVol>=100000},
-    {id:"v500k",e:"🌋",name:"Mountain Mover",desc:"500000 lbs",cat:"Volume",earned:totalVol>=500000},
-    {id:"v1m",e:"🚀",name:"Ton Club",desc:"1000000 lbs",cat:"Volume",earned:totalVol>=1000000},
+    {id:"v10k",e:"🚛",name:"Heavy Hauler",desc:"10,000 lbs",cat:"Volume",earned:totalVol>=10000},
+    {id:"v100k",e:"🏗️",name:"Iron Worker",desc:"100,000 lbs",cat:"Volume",earned:totalVol>=100000},
+    {id:"v500k",e:"🌋",name:"Mountain Mover",desc:"500,000 lbs",cat:"Volume",earned:totalVol>=500000},
+    {id:"v1m",e:"🚀",name:"Ton Club",desc:"1,000,000 lbs",cat:"Volume",earned:totalVol>=1000000},
+    // ── PRs ────────────────────────────────────────────────────
     {id:"pr1",e:"🏆",name:"First PR",desc:"First personal record",cat:"PRs",earned:totalPRs>=1},
     {id:"pr5",e:"🥈",name:"5 PRs",desc:"5 exercise PRs",cat:"PRs",earned:totalPRs>=5},
     {id:"pr10",e:"🥇",name:"10 PRs",desc:"10 personal records",cat:"PRs",earned:totalPRs>=10},
     {id:"pr25",e:"🎖️",name:"PR Machine",desc:"25 personal records",cat:"PRs",earned:totalPRs>=25},
     {id:"pr50",e:"👑",name:"PR Royalty",desc:"50 personal records",cat:"PRs",earned:totalPRs>=50},
+    // ── Variety ────────────────────────────────────────────────
     {id:"ex5",e:"🔭",name:"Explorer",desc:"Tried 5 exercises",cat:"Variety",earned:uniqEx.size>=5},
     {id:"ex10",e:"🗺️",name:"Adventurer",desc:"Tried 10 exercises",cat:"Variety",earned:uniqEx.size>=10},
     {id:"ex20",e:"🌍",name:"World Traveler",desc:"Tried 20 exercises",cat:"Variety",earned:uniqEx.size>=20},
     {id:"mg5",e:"🧬",name:"All-Rounder",desc:"Trained 5 muscle groups",cat:"Variety",earned:uniqMg.size>=5},
     {id:"mg7",e:"💎",name:"Complete Athlete",desc:"Trained all major groups",cat:"Variety",earned:uniqMg.size>=7},
   ];
-  var cats=["Streak","Workouts","Volume","PRs","Variety"];
+  var cats=["Streak","Monthly","Workouts","Volume","PRs","Variety"];
   var earnedCount=BADGES.filter(function(b){return b.earned;}).length;
   return React.createElement("div",{className:"content",style:{paddingTop:4}},
     React.createElement("div",{style:{background:"linear-gradient(135deg,var(--acc),var(--acc2))",borderRadius:14,padding:"16px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}},
@@ -1825,14 +1855,18 @@ function HistoryTab({history,setHistory,exercises,onProgress,recentlyDeleted,set
   const totalW=history.length,totalS=history.reduce(function(a,h){return a+h.log.reduce(function(b,e){return b+e.sets.filter(function(s){return s.done;}).length;},0);},0),totalT=history.reduce(function(a,h){return a+(h.duration||0);},0);
   const fmt=function(iso){var d=new Date(iso);return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
 
-  // Current workout streak (consecutive days with at least one workout)
+  // Current streak: consecutive weeks (Mon–Sun) with 5+ workouts
   const streak=(function(){
     if(!history.length)return 0;
-    var days=[...new Set(history.map(function(h){return new Date(h.date).toDateString();}))].sort(function(a,b){return new Date(b)-new Date(a);});
-    var today=new Date().toDateString(),yest=new Date(Date.now()-86400000).toDateString();
-    if(days[0]!==today&&days[0]!==yest)return 0;
+    function monKey(d){var day=new Date(d).getDay();var mon=new Date(d);mon.setDate(mon.getDate()+((day===0)?-6:1-day));return mon.toDateString();}
+    var wk={};
+    history.forEach(function(h){var k=monKey(h.date);wk[k]=(wk[k]||0)+1;});
+    var good=Object.keys(wk).filter(function(k){return wk[k]>=5;}).sort(function(a,b){return new Date(b)-new Date(a);});
+    if(!good.length)return 0;
+    var thisW=monKey(new Date().toISOString()),lastW=monKey(new Date(Date.now()-7*86400000).toISOString());
+    if(good[0]!==thisW&&good[0]!==lastW)return 0;
     var n=1;
-    for(var i=1;i<days.length;i++){var d1=new Date(days[i-1]).setHours(12,0,0,0),d2=new Date(days[i]).setHours(12,0,0,0);if(Math.round((d1-d2)/86400000)===1)n++;else break;}
+    for(var i=1;i<good.length;i++){if(Math.round((new Date(good[i-1])-new Date(good[i]))/604800000)===1)n++;else break;}
     return n;
   })();
 
@@ -1967,8 +2001,8 @@ function HistoryTab({history,setHistory,exercises,onProgress,recentlyDeleted,set
       streak>=2&&React.createElement("div",{style:{background:"linear-gradient(135deg,#FF6B00,#FF9500)",borderRadius:12,padding:"10px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:10}},
         React.createElement("span",{style:{fontSize:24,lineHeight:1}},"🔥"),
         React.createElement("div",null,
-          React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"#fff",letterSpacing:.5}},streak,"-DAY STREAK"),
-          React.createElement("div",{style:{fontSize:11,color:"rgba(255,255,255,.8)"}},streak<7?"Keep it up!":streak<30?"On fire!":"Legendary!")
+          React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:18,color:"#fff",letterSpacing:.5}},streak,"-WEEK STREAK"),
+          React.createElement("div",{style:{fontSize:11,color:"rgba(255,255,255,.8)"}},streak<4?"Keep it up!":streak<13?"On fire!":"Legendary!")
         )
       ),
       React.createElement("div",{className:"stat-row"},

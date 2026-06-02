@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Response Map — Prismecs Site | Mesa Power Solutions</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: #0d1b2a;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 360px;
+      min-width: 360px;
+      display: flex;
+      flex-direction: column;
+      background: #0d1b2a;
+      color: #cdd9e5;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+    }
+
+    #sidebar-header {
+      background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+      padding: 22px 20px 18px;
+      border-bottom: 3px solid #e94560;
+    }
+
+    .header-logo {
+      font-size: 0.72em;
+      font-weight: 600;
+      color: #7ab3d4;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    #sidebar-header h1 {
+      font-size: 1.25em;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      line-height: 1.2;
+    }
+
+    #sidebar-header .tagline {
+      font-size: 0.72em;
+      color: #7ab3d4;
+      margin-top: 5px;
+    }
+
+    /* ── Site Info Block ── */
+    #site-block {
+      background: #122040;
+      padding: 14px 20px;
+      border-bottom: 1px solid #1e3050;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .site-pin {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      background: #e94560;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(233,69,96,0.5);
+    }
+
+    .site-text .site-name {
+      font-size: 1.05em;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .site-text .site-coord {
+      font-size: 0.68em;
+      color: #7ab3d4;
+      font-family: 'Courier New', monospace;
+      margin-top: 3px;
+    }
+
+    /* ── Section Heading ── */
+    .section-label {
+      padding: 14px 20px 8px;
+      font-size: 0.68em;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #4a7a9b;
+    }
+
+    /* ── Shop Cards ── */
+    #cards-container {
+      padding: 0 14px 14px;
+      flex: 1;
+    }
+
+    .shop-card {
+      background: #122040;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border-left: 5px solid #ccc;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .shop-card:hover {
+      background: #1a2e50;
+      transform: translateX(3px);
+    }
+
+    .shop-card.active {
+      background: #1a2e50;
+      transform: translateX(3px);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .card-num {
+      width: 26px;
+      height: 26px;
+      min-width: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78em;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-title {
+      flex: 1;
+    }
+
+    .card-shop-name {
+      font-size: 0.98em;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-address {
+      font-size: 0.68em;
+      color: #6a8fa8;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .card-stats {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat-box {
+      flex: 1;
+      background: #0d1b2a;
+      border-radius: 7px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .stat-lbl {
+      font-size: 0.6em;
+      color: #4a7a9b;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 4px;
+    }
+
+    .loading-pulse {
+      color: #4a7a9b;
+      font-size: 0.78em;
+      font-style: italic;
+      padding: 10px 0;
+      text-align: center;
+    }
+
+    /* ── Disclaimer / Footer ── */
+    #sidebar-footer {
+      padding: 10px 20px;
+      font-size: 0.62em;
+      color: #2e5070;
+      border-top: 1px solid #1a2e4a;
+      line-height: 1.5;
+    }
+
+    /* ── Map ── */
+    #map {
+      flex: 1;
+      z-index: 1;
+    }
+
+    /* ── Route tooltip ── */
+    .leaflet-popup-content b { color: #0f3460; }
+
+    /* ── Status banner ── */
+    #status-banner {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      background: rgba(13,27,42,0.92);
+      color: #7ab3d4;
+      font-size: 0.75em;
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1px solid #1e3050;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <div class="header-logo">Mesa Power Solutions</div>
+    <h1>Response Route Map</h1>
+    <div class="tagline">4 Nearest Service Shops → Prismecs Site</div>
+  </div>
+
+  <div id="site-block">
+    <div class="site-pin">★</div>
+    <div class="site-text">
+      <div class="site-name">Prismecs Site</div>
+      <div class="site-coord">30°47'48.5"N &nbsp; 104°45'45.0"W</div>
+      <div class="site-coord" style="margin-top:1px;">Presidio County, TX</div>
+    </div>
+  </div>
+
+  <div class="section-label">Service Shop Locations</div>
+  <div id="cards-container">
+    <div class="loading-pulse" id="loading-msg">⏳ Fetching live route data…</div>
+  </div>
+
+  <div id="sidebar-footer">
+    Driving routes via OSRM / OpenStreetMap &nbsp;•&nbsp;
+    Times are estimates under normal conditions &nbsp;•&nbsp;
+    Shop data: mesapowersolutions.com
+  </div>
+</div>
+
+<!-- ── Map ── -->
+<div id="map"></div>
+<div id="status-banner" id="status">Loading routes…</div>
+
+<script>
+// ─── Site & Shop Data ─────────────────────────────────────────────────────────
+const SITE = {
+  lat: 30.796806,
+  lon: -104.762500,
+  name: 'Prismecs Site',
+  coord: '30°47\'48.5"N  104°45\'45.0"W'
+};
+
+// 4 nearest Mesa Power Solutions shops (sorted closest → farthest straight-line)
+const SHOPS = [
+  {
+    rank: 1,
+    name: 'Pecos',
+    state: 'TX',
+    address: '64 Co. Rd. 201, Pecos, TX 79772',
+    lat: 31.4229,
+    lon: -103.4780
+  },
+  {
+    rank: 2,
+    name: 'Fort Stockton',
+    state: 'TX',
+    address: '175 C St, Fort Stockton, TX 79735',
+    lat: 30.8887,
+    lon: -102.8779
+  },
+  {
+    rank: 3,
+    name: 'Carlsbad',
+    state: 'NM',
+    address: '1525 Industrial Dr, Carlsbad, NM 88220',
+    lat: 32.4160,
+    lon: -104.2210
+  },
+  {
+    rank: 4,
+    name: 'Midland',
+    state: 'TX',
+    address: '9202 W. County Rd. 139, Midland, TX 79706',
+    lat: 32.0170,
+    lon: -102.2150
+  }
+];
+
+const COLORS   = ['#E74C3C', '#3498DB', '#2ECC71', '#F0A500'];
+const DASH     = [null, null, null, null];
+
+// ─── Map Init ─────────────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: true, attributionControl: true })
+  .setView([31.4, -103.6], 7);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  maxZoom: 18
+}).addTo(map);
+
+// ─── Site Marker ─────────────────────────────────────────────────────────────
+const siteHtml = `
+  <div style="
+    width:44px; height:44px; background:#e94560;
+    border-radius:50%; border:3px solid #fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; color:#fff;
+    box-shadow:0 0 16px rgba(233,69,96,0.7), 0 2px 6px rgba(0,0,0,0.4);
+  ">★</div>`;
+
+const siteMarker = L.marker([SITE.lat, SITE.lon], {
+  icon: L.divIcon({ html: siteHtml, className: '', iconSize: [44,44], iconAnchor: [22,22] }),
+  zIndexOffset: 1000
+}).addTo(map);
+
+siteMarker.bindPopup(`
+  <div style="min-width:200px;">
+    <b style="font-size:1.05em;">🏭 Prismecs Site</b><br/>
+    <span style="font-family:monospace; font-size:0.8em; color:#555;">${SITE.coord}</span><br/>
+    <span style="font-size:0.8em; color:#777;">Presidio County, TX</span>
+  </div>
+`);
+
+// ─── Shop Markers ─────────────────────────────────────────────────────────────
+SHOPS.forEach((shop, i) => {
+  const html = `
+    <div style="
+      width:34px; height:34px; background:${COLORS[i]};
+      border-radius:50%; border:3px solid #fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:14px; font-weight:700; color:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,0.35);
+    ">${i+1}</div>`;
+
+  L.marker([shop.lat, shop.lon], {
+    icon: L.divIcon({ html, className: '', iconSize: [34,34], iconAnchor: [17,17] })
+  }).addTo(map)
+    .bindPopup(`
+      <b>${shop.name}, ${shop.state}</b><br/>
+      <span style="font-size:0.82em; color:#555;">${shop.address}</span>
+    `);
+});
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function fmtMiles(meters) {
+  return (meters / 1609.344).toFixed(0) + ' mi';
+}
+
+function fmtTime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+// ─── OSRM Route Fetch ─────────────────────────────────────────────────────────
+async function fetchRoute(shop) {
+  const url = [
+    'https://router.project-osrm.org/route/v1/driving/',
+    `${shop.lon},${shop.lat}`,
+    ';',
+    `${SITE.lon},${SITE.lat}`,
+    '?overview=full&geometries=geojson'
+  ].join('');
+
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.routes && data.routes.length > 0) {
+      return {
+        geometry: data.routes[0].geometry,
+        distance: data.routes[0].distance,
+        duration: data.routes[0].duration
+      };
+    }
+  } catch (e) {
+    console.warn('Route fetch failed for', shop.name, e);
+  }
+  return null;
+}
+
+// ─── Build & Render ───────────────────────────────────────────────────────────
+async function buildMap() {
+  const bounds = L.latLngBounds([[SITE.lat, SITE.lon]]);
+  const results = [];
+
+  for (let i = 0; i < SHOPS.length; i++) {
+    const shop  = SHOPS[i];
+    const route = await fetchRoute(shop);
+
+    let distText = '—';
+    let timeText = '—';
+
+    if (route) {
+      distText = fmtMiles(route.distance);
+      timeText = fmtTime(route.duration);
+
+      const layer = L.geoJSON(route.geometry, {
+        style: {
+          color:   COLORS[i],
+          weight:  5,
+          opacity: 0.82
+        }
+      }).addTo(map);
+
+      layer.bindPopup(`
+        <b style="color:${COLORS[i]};">Shop ${i+1}: ${shop.name}, ${shop.state}</b><br/>
+        <span style="font-size:0.85em;">🕐 ${timeText} &nbsp;|&nbsp; 📍 ${distText}</span>
+      `);
+
+      route.geometry.coordinates.forEach(([lon, lat]) => bounds.extend([lat, lon]));
+    }
+
+    results.push({ shop, distText, timeText, color: COLORS[i], index: i });
+  }
+
+  // Fit map to all routes
+  map.fitBounds(bounds, { padding: [50, 50] });
+
+  // Sort cards by drive time (ascending) if available
+  results.sort((a, b) => {
+    const ta = parseMins(a.timeText);
+    const tb = parseMins(b.timeText);
+    return ta - tb;
+  });
+
+  renderCards(results);
+}
+
+function parseMins(t) {
+  if (t === '—') return Infinity;
+  const hm = t.match(/(?:(\d+)h)?\s*(?:(\d+)m)?/);
+  return (parseInt(hm[1] || 0) * 60) + parseInt(hm[2] || 0);
+}
+
+function renderCards(data) {
+  const container = document.getElementById('cards-container');
+  container.innerHTML = data.map(({ shop, distText, timeText, color, index }) => `
+    <div class="shop-card" style="border-left-color:${color};" onclick="focusShop(${index})">
+      <div class="card-top">
+        <div class="card-num" style="background:${color};">${index + 1}</div>
+        <div class="card-title">
+          <div class="card-shop-name">${shop.name}, ${shop.state}</div>
+          <div class="card-address">${shop.address}</div>
+        </div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-box">
+          <div class="stat-val">${timeText}</div>
+          <div class="stat-lbl">Drive Time</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${distText}</div>
+          <div class="stat-lbl">Distance</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── Focus on shop when card clicked ─────────────────────────────────────────
+function focusShop(i) {
+  const shop = SHOPS[i];
+  map.flyTo([shop.lat, shop.lon], 9, { duration: 1.2 });
+}
+
+// ─── Go ───────────────────────────────────────────────────────────────────────
+buildMap();
+</script>
+
+</body>
+</html>

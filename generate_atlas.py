@@ -1,55 +1,59 @@
 #!/usr/bin/env python3
 """
 Run this locally to generate an AI Atlas badge image and embed it.
-Requires: pip install pillow requests
+Requires: pip install pillow openai
 
-Uses Pollinations.ai (free, no API key needed).
+Uses OpenAI DALL-E 3.
+Set your key:  export OPENAI_API_KEY=sk-...
 """
 
-import base64, io, re, sys, time
+import base64, io, os, re, sys
 from pathlib import Path
 
 try:
-    import requests
+    from openai import OpenAI
     from PIL import Image
 except ImportError:
-    sys.exit("Install deps first:  pip install pillow requests")
+    sys.exit("Install deps first:  pip install pillow openai")
 
 HTML_FILE = Path(__file__).parent / "workout_widget.html"
 
 PROMPT = (
-    "Boris Vallejo fantasy art style, massively muscular Atlas kneeling on a jagged rocky cliff, "
+    "Boris Vallejo fantasy art style. Massively muscular Atlas kneeling on a jagged rocky cliff, "
     "straining upward with both arms raised overhead, pushing a colossal glowing Earth planet "
-    "that fills the sky, dramatic top-down blue-cyan light from the planet illuminating his "
-    "ripped glistening bronze body, deep shadow in cool purple-blue, long flowing golden hair, "
-    "chiseled jaw clenched in heroic effort, dark cosmic space background with swirling nebula "
-    "clouds, tiny distant stars, hyperrealistic oil painting, epic fantasy illustration, "
-    "cinematic lighting, dynamic composition, 4k detail"
+    "that fills the entire sky above him. Dramatic top-down blue-cyan light from the planet "
+    "illuminates his ripped glistening bronze body. Deep cool purple-blue shadows. Long flowing "
+    "golden hair. Chiseled jaw clenched in heroic effort. Dark cosmic space background with "
+    "swirling nebula clouds and tiny distant stars. Hyperrealistic oil painting, epic fantasy "
+    "illustration, cinematic lighting, dynamic vertical composition."
 )
 
-WIDTH, HEIGHT = 420, 520
+# DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
+DALLE_SIZE = "1024x1792"   # tall portrait — best for the kneeling pose
+OUTPUT_W, OUTPUT_H = 420, 520  # resized for the badge card
 
 
-def generate(prompt: str, w: int, h: int, retries: int = 4) -> bytes:
-    import urllib.parse
-    encoded = urllib.parse.quote(prompt)
-    url = (
-        f"https://image.pollinations.ai/prompt/{encoded}"
-        f"?width={w}&height={h}&nologo=true&model=flux&seed=42"
+def generate(prompt: str) -> bytes:
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        sys.exit(
+            "No OPENAI_API_KEY found.\n"
+            "Set it with:  export OPENAI_API_KEY=sk-..."
+        )
+    client = OpenAI(api_key=api_key)
+    print("Requesting image from OpenAI DALL-E 3…")
+    print(f"  prompt: {prompt[:90]}…")
+    response = client.images.generate(
+        model="dall-e-3",
+        prompt=prompt,
+        size=DALLE_SIZE,
+        quality="hd",
+        response_format="b64_json",
+        n=1,
     )
-    print(f"Requesting image from Pollinations.ai (Flux model)…")
-    print(f"  prompt: {prompt[:80]}…")
-    for attempt in range(1, retries + 1):
-        try:
-            r = requests.get(url, timeout=90, headers={"User-Agent": "Mozilla/5.0"})
-            if r.status_code == 200 and r.content[:3] in (b'\xff\xd8\xff', b'\x89PN', b'GIF'):
-                print(f"  ✓ Downloaded {len(r.content):,} bytes")
-                return r.content
-            print(f"  attempt {attempt} → HTTP {r.status_code}, retrying…")
-        except Exception as e:
-            print(f"  attempt {attempt} error: {e}")
-        time.sleep(3 * attempt)
-    sys.exit("Failed to download image after retries.")
+    raw = base64.b64decode(response.data[0].b64_json)
+    print(f"  ✓ Received {len(raw):,} bytes")
+    return raw
 
 
 def process(raw: bytes, w: int, h: int) -> str:
@@ -82,13 +86,13 @@ def embed(html: str, data_url: str, w: int, h: int) -> str:
 
 
 if __name__ == "__main__":
-    raw = generate(PROMPT, WIDTH, HEIGHT)
+    raw = generate(PROMPT)
     print("Processing image…")
-    data_url = process(raw, WIDTH, HEIGHT)
+    data_url = process(raw, OUTPUT_W, OUTPUT_H)
     print(f"  ✓ Base64 length: {len(data_url):,} chars")
 
     html = HTML_FILE.read_text(encoding="utf-8")
-    html = embed(html, data_url, WIDTH, HEIGHT)
+    html = embed(html, data_url, OUTPUT_W, OUTPUT_H)
     HTML_FILE.write_text(html, encoding="utf-8")
     print(f"  ✓ Embedded into {HTML_FILE.name}")
     print("\nDone! Open workout_widget.html to see the Atlas badge.")

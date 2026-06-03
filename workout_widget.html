@@ -1755,7 +1755,7 @@ function BadgesView({history,exercises,prMap,streak}) {
   // Monthly stats: months with 20+ workouts (≈ 5/week pace)
   var moCounts={};
   history.forEach(function(h){var d=new Date(h.date);var k=d.getFullYear()+"-"+d.getMonth();moCounts[k]=(moCounts[k]||0)+1;});
-  var compliantMonths=Object.keys(moCounts).filter(function(k){return moCounts[k]>=20;}).sort();
+  var compliantMonths=Object.keys(moCounts).filter(function(k){return moCounts[k]>=16;}).sort();
   var totalMonths=compliantMonths.length;
   var monthStreak=(function(){
     if(!compliantMonths.length)return 0;
@@ -1768,6 +1768,11 @@ function BadgesView({history,exercises,prMap,streak}) {
     return n;
   })();
 
+  var cardioSessions=history.filter(function(h){return (h.muscleGroups||[]).includes("Cardio")||h.log.some(function(l){var ex=exercises.find(function(x){return x.id===l.exId;});return ex&&ex.category==="Cardio";});}).length;
+  var hiitSessions=history.filter(function(h){return (h.muscleGroups||[]).includes("HIIT")||h.log.some(function(l){var ex=exercises.find(function(x){return x.id===l.exId;});return ex&&ex.category==="HIIT";});}).length;
+  var totalCardioDist=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){var ex=exercises.find(function(x){return x.id===l.exId;});if(!ex||ex.category!=="Cardio")return b;return b+l.sets.filter(function(s){return s.done;}).reduce(function(c,s){return c+(s.distance||0);},0);},0);},0);
+  var totalHiitSets=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){var ex=exercises.find(function(x){return x.id===l.exId;});if(!ex||ex.category!=="HIIT")return b;return b+l.sets.filter(function(s){return s.done;}).length;},0);},0);
+
   var BADGES=[
     // ── Streak (weekly, 5 workouts/week required) ──────────────
     {id:"s1",e:"🔥",name:"First Spark",desc:"1-week streak (5/week)",cat:"Streak",earned:streak>=1},
@@ -1778,7 +1783,7 @@ function BadgesView({history,exercises,prMap,streak}) {
     {id:"s26",e:"💫",name:"Half Year",desc:"26-week streak",cat:"Streak",earned:streak>=26},
     {id:"s52",e:"👑",name:"Year of Gains",desc:"52-week streak — full year",cat:"Streak",earned:streak>=52},
     // ── Monthly (20+ workouts in a calendar month) ─────────────
-    {id:"m1",e:"📅",name:"Full Month",desc:"20+ workouts in 1 month",cat:"Monthly",earned:totalMonths>=1},
+    {id:"m1",e:"📅",name:"Full Month",desc:"16+ workouts in a month",cat:"Monthly",earned:totalMonths>=1},
     {id:"m2",e:"🔄",name:"Back to Back",desc:"2 consecutive full months",cat:"Monthly",earned:monthStreak>=2},
     {id:"m3",e:"🗓️",name:"Quarter Grind",desc:"3 consecutive full months",cat:"Monthly",earned:monthStreak>=3},
     {id:"m6",e:"🏅",name:"6-Month Streak",desc:"6 consecutive full months",cat:"Monthly",earned:monthStreak>=6},
@@ -1802,20 +1807,46 @@ function BadgesView({history,exercises,prMap,streak}) {
     {id:"v100k",e:"🏗️",name:"Iron Worker",desc:"100,000 lbs",cat:"Volume",earned:totalVol>=100000},
     {id:"v500k",e:"🌋",name:"Mountain Mover",desc:"500,000 lbs",cat:"Volume",earned:totalVol>=500000},
     {id:"v1m",e:"🚀",name:"Ton Club",desc:"1,000,000 lbs",cat:"Volume",earned:totalVol>=1000000},
+    {id:"v2m",e:"🏔️",name:"Iron Giant",desc:"2,000,000 lbs",cat:"Volume",earned:totalVol>=2000000},
+    {id:"v5m",e:"⚡",name:"Force of Nature",desc:"5,000,000 lbs",cat:"Volume",earned:totalVol>=5000000},
+    {id:"v10m",e:"🌍",name:"Atlas",desc:"10,000,000 lbs — carrying the weight of the world",cat:"Volume",earned:totalVol>=10000000},
     // ── PRs ────────────────────────────────────────────────────
     {id:"pr1",e:"🏆",name:"First PR",desc:"First personal record",cat:"PRs",earned:totalPRs>=1},
     {id:"pr5",e:"🥈",name:"5 PRs",desc:"5 exercise PRs",cat:"PRs",earned:totalPRs>=5},
     {id:"pr10",e:"🥇",name:"10 PRs",desc:"10 personal records",cat:"PRs",earned:totalPRs>=10},
     {id:"pr25",e:"🎖️",name:"PR Machine",desc:"25 personal records",cat:"PRs",earned:totalPRs>=25},
     {id:"pr50",e:"👑",name:"PR Royalty",desc:"50 personal records",cat:"PRs",earned:totalPRs>=50},
+    {id:"pr100",e:"💫",name:"PR Legend",desc:"100 personal records",cat:"PRs",earned:totalPRs>=100},
+    {id:"pr250",e:"🌟",name:"PR Titan",desc:"250 personal records",cat:"PRs",earned:totalPRs>=250},
+    {id:"pr500",e:"🔱",name:"PR God",desc:"500 personal records — untouchable",cat:"PRs",earned:totalPRs>=500},
     // ── Variety ────────────────────────────────────────────────
     {id:"ex5",e:"🔭",name:"Explorer",desc:"Tried 5 exercises",cat:"Variety",earned:uniqEx.size>=5},
     {id:"ex10",e:"🗺️",name:"Adventurer",desc:"Tried 10 exercises",cat:"Variety",earned:uniqEx.size>=10},
     {id:"ex20",e:"🌍",name:"World Traveler",desc:"Tried 20 exercises",cat:"Variety",earned:uniqEx.size>=20},
     {id:"mg5",e:"🧬",name:"All-Rounder",desc:"Trained 5 muscle groups",cat:"Variety",earned:uniqMg.size>=5},
     {id:"mg7",e:"💎",name:"Complete Athlete",desc:"Trained all major groups",cat:"Variety",earned:uniqMg.size>=7},
+    // ── Cardio ─────────────────────────────────────────────────
+    {id:"c1",e:"👟",name:"First Stride",desc:"First cardio session",cat:"Cardio",earned:cardioSessions>=1},
+    {id:"c5",e:"🏃",name:"Road Rookie",desc:"5 cardio sessions",cat:"Cardio",earned:cardioSessions>=5},
+    {id:"c10",e:"🚴",name:"Cardio Regular",desc:"10 cardio sessions",cat:"Cardio",earned:cardioSessions>=10},
+    {id:"c25",e:"🌊",name:"Endurance Builder",desc:"25 cardio sessions",cat:"Cardio",earned:cardioSessions>=25},
+    {id:"c50",e:"💨",name:"Wind Chaser",desc:"50 cardio sessions",cat:"Cardio",earned:cardioSessions>=50},
+    {id:"c100",e:"🏅",name:"Cardio Century",desc:"100 cardio sessions",cat:"Cardio",earned:cardioSessions>=100},
+    {id:"cd10",e:"📏",name:"10K Club",desc:"10 km total cardio distance",cat:"Cardio",earned:totalCardioDist>=10},
+    {id:"cd42",e:"🗺️",name:"Marathon",desc:"42.2 km total distance",cat:"Cardio",earned:totalCardioDist>=42.2},
+    {id:"cd100",e:"🚀",name:"Century Ride",desc:"100 km total distance",cat:"Cardio",earned:totalCardioDist>=100},
+    // ── HIIT ───────────────────────────────────────────────────
+    {id:"h1",e:"⚡",name:"Sparked",desc:"First HIIT session",cat:"HIIT",earned:hiitSessions>=1},
+    {id:"h5",e:"🔥",name:"HIIT Starter",desc:"5 HIIT sessions",cat:"HIIT",earned:hiitSessions>=5},
+    {id:"h10",e:"💥",name:"HIIT Regular",desc:"10 HIIT sessions",cat:"HIIT",earned:hiitSessions>=10},
+    {id:"h25",e:"🌪️",name:"Tornado",desc:"25 HIIT sessions",cat:"HIIT",earned:hiitSessions>=25},
+    {id:"h50",e:"🏔️",name:"Peak Performer",desc:"50 HIIT sessions",cat:"HIIT",earned:hiitSessions>=50},
+    {id:"h100",e:"👑",name:"HIIT Royalty",desc:"100 HIIT sessions",cat:"HIIT",earned:hiitSessions>=100},
+    {id:"hs100",e:"💯",name:"100 HIIT Sets",desc:"100 HIIT sets completed",cat:"HIIT",earned:totalHiitSets>=100},
+    {id:"hs500",e:"⚔️",name:"Warrior",desc:"500 HIIT sets",cat:"HIIT",earned:totalHiitSets>=500},
+    {id:"hs1k",e:"🗡️",name:"HIIT Knight",desc:"1000 HIIT sets",cat:"HIIT",earned:totalHiitSets>=1000},
   ];
-  var cats=["Streak","Monthly","Workouts","Volume","PRs","Variety"];
+  var cats=["Streak","Monthly","Workouts","Volume","PRs","Variety","Cardio","HIIT"];
   var earnedCount=BADGES.filter(function(b){return b.earned;}).length;
   return React.createElement("div",{className:"content",style:{paddingTop:4}},
     React.createElement("div",{style:{background:"linear-gradient(135deg,var(--acc),var(--acc2))",borderRadius:14,padding:"16px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}},
@@ -1832,8 +1863,8 @@ function BadgesView({history,exercises,prMap,streak}) {
         React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}},
           group.map(function(b){
             return React.createElement("div",{key:b.id,style:{background:b.earned?"var(--card)":"var(--s1)",border:"1.5px solid "+(b.earned?"var(--acc)":"var(--border)"),borderRadius:14,padding:"12px 10px",textAlign:"center",opacity:b.earned?1:0.5}},
-              React.createElement("div",{style:{fontSize:28,marginBottom:4,filter:b.earned?"none":"grayscale(1)"}},b.e),
-              React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:13,letterSpacing:.3,color:b.earned?"var(--acc)":"var(--muted)",marginBottom:2}},b.name),
+              React.createElement("div",{style:{fontSize:b.id==="v10m"?36:28,marginBottom:4,filter:b.earned?"none":"grayscale(1)",textShadow:b.id==="v10m"&&b.earned?"0 0 12px gold":"none"}},b.e),
+              React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:b.id==="v10m"?14:13,letterSpacing:.3,color:b.id==="v10m"&&b.earned?"#FFD700":b.earned?"var(--acc)":"var(--muted)",marginBottom:2,fontWeight:b.id==="v10m"?800:700}},b.name),
               React.createElement("div",{style:{fontSize:9,color:"var(--dim)",lineHeight:1.3}},b.desc)
             );
           })

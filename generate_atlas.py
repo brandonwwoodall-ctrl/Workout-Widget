@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 """
-Embed an AI-generated Atlas badge image into workout_widget.html.
+Embed an Atlas badge image into workout_widget.html.
 
-  # Option A — use an image you already have:
+  # Option A — use an image you already have (only needs Pillow):
+  pip install pillow
   python generate_atlas.py --file atlas_badge.png
 
-  # Option B — generate via DALL-E 3 (requires OpenAI key):
+  # Option B — generate a new one via DALL-E 3:
+  pip install pillow openai
   export OPENAI_API_KEY=sk-...
   python generate_atlas.py
-
-Requires: pip install pillow openai
 """
 
 import argparse, base64, io, os, re, sys
 from pathlib import Path
 
 try:
-    from openai import OpenAI
     from PIL import Image
 except ImportError:
-    sys.exit("Install deps first:  pip install pillow openai")
+    sys.exit("Install Pillow first:  pip install pillow")
 
 HTML_FILE = Path(__file__).parent / "workout_widget.html"
 
@@ -39,6 +38,10 @@ OUTPUT_W, OUTPUT_H = 420, 520  # resized for the badge card
 
 
 def generate(prompt: str) -> bytes:
+    try:
+        from openai import OpenAI
+    except ImportError:
+        sys.exit("Install the OpenAI package first:  pip install openai")
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         sys.exit(

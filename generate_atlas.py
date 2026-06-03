@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """
-Run this locally to generate an AI Atlas badge image and embed it.
-Requires: pip install pillow openai
+Embed an AI-generated Atlas badge image into workout_widget.html.
 
-Uses OpenAI DALL-E 3.
-Set your key:  export OPENAI_API_KEY=sk-...
+  # Option A — use an image you already have:
+  python generate_atlas.py --file atlas_badge.png
+
+  # Option B — generate via DALL-E 3 (requires OpenAI key):
+  export OPENAI_API_KEY=sk-...
+  python generate_atlas.py
+
+Requires: pip install pillow openai
 """
 
-import base64, io, os, re, sys
+import argparse, base64, io, os, re, sys
 from pathlib import Path
 
 try:
@@ -86,7 +91,15 @@ def embed(html: str, data_url: str, w: int, h: int) -> str:
 
 
 if __name__ == "__main__":
-    raw = generate(PROMPT)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", help="Path to an existing image file to embed")
+    args = parser.parse_args()
+
+    if args.file:
+        raw = Path(args.file).read_bytes()
+        print(f"Using local file: {args.file} ({len(raw):,} bytes)")
+    else:
+        raw = generate(PROMPT)
     print("Processing image…")
     data_url = process(raw, OUTPUT_W, OUTPUT_H)
     print(f"  ✓ Base64 length: {len(data_url):,} chars")

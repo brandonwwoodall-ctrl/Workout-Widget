@@ -1337,7 +1337,7 @@ function CompletionScreen({data,history,exercises,onDone}) {
     if(best>0&&best>(prMap[le.exId]||0)){var ex=exercises.find(function(x){return x.id===le.exId;});if(ex)newPRs.push({name:ex.name,weight:best,category:ex.category});}
   });
   var totalSets=data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).length;},0);
-  var totalVol=data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
+  var totalVol=data.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*(s.weight||0));},0);},0);
   return React.createElement("div",{style:{position:"fixed",inset:0,zIndex:80,background:"var(--bg)",display:"flex",flexDirection:"column",overflowY:"auto"}},
     React.createElement("div",{style:{background:"linear-gradient(160deg,var(--acc),var(--acc2))",padding:"64px 24px 32px",textAlign:"center"}},
       React.createElement("div",{style:{fontSize:56,marginBottom:8}},"🎉"),
@@ -1621,7 +1621,7 @@ function TrendView({history,exercises}) {
 
     // Volume trend per session
     var volArr=filtH.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);}).map(function(h){
-      return h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
+      return h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*(s.weight||0));},0);},0);
     });
 
     // Top workouts
@@ -1709,7 +1709,7 @@ function TrendView({history,exercises}) {
   // ── WORKOUT DRILL-DOWN ────────────────────────────────────────────
   if(cur.type==="workout"){
     var woSess=filtH.filter(function(h){return h.workoutName===cur.name;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
-    var woVol=woSess.map(function(h){return h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);});
+    var woVol=woSess.map(function(h){return h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*(s.weight||0));},0);},0);});
     var woDur=woSess.map(function(h){return h.duration||0;});
     var avgDur=woSess.length?Math.round(woDur.reduce(function(a,v){return a+v;},0)/woSess.length):0;
     var exFreqW={};
@@ -1746,7 +1746,7 @@ function TrendView({history,exercises}) {
           ),
           React.createElement("div",{className:"sec"},"SESSION TIMELINE"),
           [...woSess].reverse().map(function(h){
-            var vol=h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*s.weight);},0);},0);
+            var vol=h.log.reduce(function(a,l){return a+l.sets.filter(function(s){return s.done;}).reduce(function(b,s){return b+(s.reps*(s.weight||0));},0);},0);
             return React.createElement("div",{key:h.id,className:"card2",style:{marginBottom:8}},
               React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
                 React.createElement("div",{style:{fontSize:13,fontWeight:600}},fmtD(h.date)),
@@ -1764,7 +1764,7 @@ function TrendView({history,exercises}) {
     var ex=exercises.find(function(x){return x.id===eid;});
     if(!ex)return React.createElement("div",null,BackBtn,React.createElement("p",{style:{color:"var(--muted)"}},"Exercise not found."));
     var exSess=filtH.filter(function(h){return h.log.some(function(l){return l.exId===eid;});})
-      .map(function(h){var le=h.log.find(function(l){return l.exId===eid;});var done=le.sets.filter(function(s){return s.done;});var mW=done.length?Math.max.apply(null,done.map(function(s){return s.weight;})):0;var mR=done.length?Math.max.apply(null,done.map(function(s){return s.reps;})):0;var vol=done.reduce(function(a,s){return a+(s.reps*s.weight);},0);return{date:h.date,mW:mW,mR:mR,vol:vol,sets:done.length};})
+      .map(function(h){var le=h.log.find(function(l){return l.exId===eid;});var done=le.sets.filter(function(s){return s.done;});var mW=done.length?Math.max.apply(null,done.map(function(s){return s.weight;})):0;var mR=done.length?Math.max.apply(null,done.map(function(s){return s.reps;})):0;var vol=done.reduce(function(a,s){return a+(s.reps*(s.weight||0));},0);return{date:h.date,mW:mW,mR:mR,vol:vol,sets:done.length};})
       .sort(function(a,b){return new Date(a.date)-new Date(b.date);});
     var prW=Math.max(0,...exSess.map(function(s){return s.mW;}));
     var prR=Math.max(0,...exSess.map(function(s){return s.mR;}));
@@ -2167,7 +2167,7 @@ function ProgressScreen({exId,exercises,history,setHistory,onClose}) {
       var doneSets=le.sets.filter(function(s){return s.done;});
       var maxWeight=doneSets.length>0?Math.max.apply(null,doneSets.map(function(s){return s.weight;})):0;
       var maxReps=doneSets.length>0?Math.max.apply(null,doneSets.map(function(s){return s.reps;})):0;
-      var totalVol=doneSets.reduce(function(a,s){return a+(s.reps*s.weight);},0);
+      var totalVol=doneSets.reduce(function(a,s){return a+(s.reps*(s.weight||0));},0);
       return {histId:h.id,date:h.date,maxWeight:maxWeight,maxReps:maxReps,totalVol:totalVol,sets:doneSets.length};
     }).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
 

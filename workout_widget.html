@@ -1816,7 +1816,7 @@ function TrendView({history,exercises}) {
 function BadgesView({history,exercises,prMap,streak}) {
   var totalW=history.length;
   var totalSets=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){return b+l.sets.filter(function(s){return s.done;}).length;},0);},0);
-  var totalVol=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){return b+l.sets.filter(function(s){return s.done;}).reduce(function(c,s){return c+(s.reps*s.weight);},0);},0);},0);
+  var totalVol=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){return b+l.sets.filter(function(s){return s.done;}).reduce(function(c,s){return c+(s.reps*(s.weight||0));},0);},0);},0);
   var totalPRs=Object.keys(prMap).length;
   var uniqEx=new Set();history.forEach(function(h){h.log.forEach(function(l){uniqEx.add(l.exId);});});
   var uniqMg=new Set();history.forEach(function(h){(h.muscleGroups||[]).forEach(function(g){uniqMg.add(g);});});

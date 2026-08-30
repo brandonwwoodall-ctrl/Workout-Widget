@@ -427,7 +427,7 @@ textarea.inp{resize:vertical;min-height:80px;}
 .ex-name{font-weight:600;font-size:15px;flex:1;color:var(--text);}
 .ex-cat{font-size:11px;color:var(--acc);font-weight:600;}
 .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--s1);border:1px solid var(--acc);color:var(--acc);border-radius:100px;padding:9px 18px;font-size:12px;font-weight:600;z-index:100;white-space:nowrap;animation:fadeT 2.5s ease forwards;box-shadow:0 4px 20px rgba(232,255,71,.15);}
-@keyframes fadeT{0%{opacity:0;transform:translateX(-50%) translateY(8px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}75%{opacity:1}100%{opacity:0}}@keyframes badge-pulse{0%,100%{box-shadow:0 0 0 1.5px var(--acc)}50%{box-shadow:0 0 0 3px var(--acc),0 0 14px 2px rgba(232,255,71,0.25)}}@keyframes atlas-pulse{0%,100%{box-shadow:0 0 28px rgba(255,215,0,0.45),0 0 56px rgba(255,140,0,0.22)}50%{box-shadow:0 0 65px rgba(255,215,0,0.9),0 0 110px rgba(255,165,0,0.55),0 0 160px rgba(255,80,0,0.28)}}
+@keyframes fadeT{0%{opacity:0;transform:translateX(-50%) translateY(8px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}75%{opacity:1}100%{opacity:0}}@keyframes badge-unlock{0%{transform:scale(1);filter:brightness(1)}18%{transform:scale(1.15);filter:brightness(3.2)}38%{transform:scale(1.09);filter:brightness(2)}60%{transform:scale(1.13);filter:brightness(2.6)}100%{transform:scale(1);filter:brightness(1)}}@keyframes badge-glow{0%,100%{box-shadow:0 0 6px 1px var(--bgc,rgba(255,215,0,.35))}50%{box-shadow:0 0 20px 6px var(--bgc,rgba(255,215,0,.65)),0 0 40px 14px var(--bgc,rgba(255,215,0,.2))}}@keyframes badge-part{0%{opacity:1;transform:rotate(var(--r,0deg)) translateX(2px) scale(1)}100%{opacity:0;transform:rotate(var(--r,0deg)) translateX(46px) scale(0)}}@keyframes badge-ring{0%{transform:scale(0.75);opacity:.85}100%{transform:scale(1.65);opacity:0}}.bgc-Streak{--bgc:rgba(255,200,0,.5)}.bgc-Monthly{--bgc:rgba(40,130,255,.55)}.bgc-Workouts{--bgc:rgba(255,120,20,.55)}.bgc-Volume{--bgc:rgba(200,100,30,.55)}.bgc-PRs{--bgc:rgba(255,215,0,.5)}.bgc-Variety{--bgc:rgba(40,200,80,.5)}.bgc-Cardio{--bgc:rgba(20,200,220,.5)}.bgc-HIIT{--bgc:rgba(255,50,20,.55)}@keyframes atlas-pulse{0%,100%{box-shadow:0 0 28px rgba(255,215,0,0.45),0 0 56px rgba(255,140,0,0.22)}50%{box-shadow:0 0 65px rgba(255,215,0,0.9),0 0 110px rgba(255,165,0,0.55),0 0 160px rgba(255,80,0,0.28)}}
 .admin-screen{position:fixed;inset:0;background:var(--bg);z-index:70;display:flex;flex-direction:column;overflow:hidden;}
 .admin-hdr{display:flex;align-items:center;gap:12px;padding:52px 18px 14px;background:var(--s1);border-bottom:2px solid var(--acc);}
 .admin-title{font-family:var(--fh);font-size:22px;letter-spacing:1px;color:var(--acc);}
@@ -1812,6 +1812,31 @@ function TrendView({history,exercises}) {
   return null;
 }
 
+// ─── BADGE ANIMATION HELPERS ─────────────────────────────────────────────────
+var CAT_GLOW={Streak:"rgba(255,200,0,.5)",Monthly:"rgba(40,130,255,.55)",Workouts:"rgba(255,120,20,.55)",Volume:"rgba(200,100,30,.55)",PRs:"rgba(255,215,0,.5)",Variety:"rgba(40,200,80,.5)",Cardio:"rgba(20,200,220,.5)",HIIT:"rgba(255,50,20,.55)"};
+function BadgeParticles({color}){
+  var angles=[0,45,90,135,180,225,270,315];
+  return React.createElement("div",{style:{position:"absolute",inset:0,pointerEvents:"none",overflow:"visible",zIndex:10}},
+    angles.map(function(a,i){
+      return React.createElement("div",{key:i,style:{
+        position:"absolute",top:"50%",left:"50%",
+        width:5,height:5,borderRadius:"50%",
+        background:"radial-gradient(circle,#fff 10%,"+color+" 70%,transparent 100%)",
+        marginTop:-2.5,marginLeft:-2.5,
+        "--r":a+"deg",
+        animation:"badge-part 0.75s ease-out "+(i*0.04)+"s both"
+      }});
+    })
+  );
+}
+function BadgeRing({color}){
+  return React.createElement("div",{style:{
+    position:"absolute",inset:-4,borderRadius:18,
+    border:"3px solid "+color,
+    animation:"badge-ring 0.8s ease-out forwards",
+    pointerEvents:"none",zIndex:11
+  }});
+}
 var BADGE_SVGS={
   s1:`<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="s1b" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#1a0e28"/><stop offset="100%" stop-color="#060410"/></radialGradient><linearGradient id="s1blade" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#5a7090"/><stop offset="40%" stop-color="#c8d8ec"/><stop offset="60%" stop-color="#e8f0fc"/><stop offset="100%" stop-color="#4a6080"/></linearGradient><linearGradient id="s1guard" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8a040"/><stop offset="100%" stop-color="#705010"/></linearGradient><radialGradient id="s1glow" cx="50%" cy="18%" r="30%"><stop offset="0%" stop-color="#800010" stop-opacity="0.6"/><stop offset="100%" stop-color="#800010" stop-opacity="0"/></radialGradient></defs><circle cx="60" cy="60" r="58" fill="url(#s1b)"/><circle cx="60" cy="60" r="58" fill="url(#s1glow)"/><polygon points="60,14 65,78 60,86 55,78" fill="url(#s1blade)"/><line x1="60" y1="14" x2="60" y2="80" stroke="rgba(230,245,255,0.55)" stroke-width="1"/><line x1="58" y1="35" x2="63" y2="40" stroke="rgba(90,110,140,0.5)" stroke-width="0.7"/><line x1="57" y1="52" x2="62" y2="56" stroke="rgba(90,110,140,0.5)" stroke-width="0.7"/><rect x="43" y="83" width="34" height="6" rx="3" fill="url(#s1guard)"/><rect x="55" y="89" width="10" height="18" rx="4" fill="#3a2010"/><line x1="55" y1="93" x2="65" y2="93" stroke="#5a3820" stroke-width="1.2"/><line x1="55" y1="97" x2="65" y2="97" stroke="#5a3820" stroke-width="1.2"/><line x1="55" y1="101" x2="65" y2="101" stroke="#5a3820" stroke-width="1.2"/><ellipse cx="60" cy="108" rx="7" ry="4" fill="url(#s1guard)"/><ellipse cx="60" cy="14" rx="2.5" ry="3" fill="#c01828"/><path d="M58.5,17 Q58,22 60,28 Q62,22 61.5,17Z" fill="#c01828"/><circle cx="59.5" cy="13.5" r="1" fill="#ff4050" opacity="0.7"/></svg>`,
   s2:`<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="s2b" cx="50%" cy="70%" r="60%"><stop offset="0%" stop-color="#1a0c08"/><stop offset="100%" stop-color="#080408"/></radialGradient><linearGradient id="s2dbl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#4a6080"/><stop offset="45%" stop-color="#d0e0f0"/><stop offset="55%" stop-color="#e8f0fc"/><stop offset="100%" stop-color="#4a6080"/></linearGradient><linearGradient id="s2anv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#484848"/><stop offset="100%" stop-color="#202020"/></linearGradient><radialGradient id="s2glo" cx="50%" cy="80%" r="35%"><stop offset="0%" stop-color="#ff6000" stop-opacity="0.7"/><stop offset="100%" stop-color="#ff6000" stop-opacity="0"/></radialGradient></defs><circle cx="60" cy="60" r="58" fill="url(#s2b)"/><circle cx="60" cy="60" r="58" fill="url(#s2glo)"/><rect x="32" y="74" width="56" height="22" rx="2" fill="url(#s2anv)"/><rect x="36" y="70" width="48" height="8" rx="3" fill="#585858"/><rect x="46" y="96" width="12" height="10" rx="1" fill="#383838"/><rect x="62" y="96" width="12" height="10" rx="1" fill="#383838"/><rect x="38" y="70" width="44" height="4" rx="2" fill="#ff7800" opacity="0.8"/><polygon points="60,18 64,62 60,70 56,62" fill="url(#s2dbl)"/><line x1="60" y1="18" x2="60" y2="65" stroke="rgba(220,240,255,0.5)" stroke-width="0.8"/><rect x="50" y="62" width="20" height="5" rx="2" fill="#b08030"/><rect x="56" y="67" width="8" height="14" rx="3" fill="#2a1808"/><circle cx="45" cy="55" r="2" fill="#ffcc00" opacity="0.9"/><circle cx="78" cy="48" r="1.5" fill="#ffaa00" opacity="0.85"/><circle cx="40" cy="45" r="1" fill="#ff8800" opacity="0.7"/><circle cx="82" cy="60" r="2" fill="#ffdd00" opacity="0.8"/><line x1="44" y1="64" x2="41" y2="56" stroke="#ffcc00" stroke-width="1" opacity="0.7"/><line x1="76" y1="62" x2="80" y2="54" stroke="#ffaa00" stroke-width="1" opacity="0.65"/><line x1="55" y1="60" x2="48" y2="50" stroke="#ff8800" stroke-width="0.8" opacity="0.6"/><line x1="65" y1="60" x2="72" y2="52" stroke="#ffcc00" stroke-width="0.8" opacity="0.65"/></svg>`,
@@ -1830,6 +1855,14 @@ var BADGE_SVGS={
 
 // ─── HISTORY TAB ─────────────────────────────────────────────────────────────
 function BadgesView({history,exercises,prMap,streak}) {
+  // ── Recently-earned tracking (localStorage badge_seen) ──────────────────
+  var _seenRef=React.useRef(null);
+  if(_seenRef.current===null){
+    try{_seenRef.current=new Set(JSON.parse(localStorage.getItem("badge_seen")||"[]"));}catch(e){_seenRef.current=new Set();}
+  }
+  var _newlyEarnedSt=React.useState(function(){return null;});
+  var newlyEarned=_newlyEarnedSt[0];
+  var setNewlyEarned=_newlyEarnedSt[1];
   var totalW=history.length;
   var totalSets=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){return b+l.sets.filter(function(s){return s.done;}).length;},0);},0);
   var totalVol=history.reduce(function(a,h){return a+h.log.reduce(function(b,l){return b+l.sets.filter(function(s){return s.done;}).reduce(function(c,s){return c+((s.reps||0)*(s.weight||0));},0);},0);},0);
@@ -1933,6 +1966,29 @@ function BadgesView({history,exercises,prMap,streak}) {
     {id:"hs1k",e:"☠️",name:"Reaper",desc:"1,000 HIIT sets — you came for souls",cat:"HIIT",earned:totalHiitSets>=1000},
   ];
   var cats=["Streak","Monthly","Workouts","Volume","PRs","Variety","Cardio","HIIT"];
+  // Compute which badges are newly earned (not yet in badge_seen)
+  var _earnedIds=BADGES.filter(function(b){return b.earned;}).map(function(b){return b.id;});
+  var _earnedKey=_earnedIds.join(",");
+  var _newlySet=React.useMemo(function(){
+    return new Set(_earnedIds.filter(function(id){return !_seenRef.current.has(id);}));
+  },[_earnedKey]);
+  // After 1.8s (animation done) save all earned to seen so flash won't repeat
+  React.useEffect(function(){
+    if(_newlySet.size===0){
+      try{localStorage.setItem("badge_seen",JSON.stringify(_earnedIds));}catch(e){}
+      _earnedIds.forEach(function(id){_seenRef.current.add(id);});
+      return;
+    }
+    setNewlyEarned(_newlySet);
+    var t=setTimeout(function(){
+      try{localStorage.setItem("badge_seen",JSON.stringify(_earnedIds));}catch(e){}
+      _earnedIds.forEach(function(id){_seenRef.current.add(id);});
+      setNewlyEarned(null);
+    },1800);
+    return function(){clearTimeout(t);};
+  },[_earnedKey]);
+  var activeNew=newlyEarned||_newlySet;
+
   var earnedCount=BADGES.filter(function(b){return b.earned;}).length;
   return React.createElement("div",{className:"content",style:{paddingTop:4}},
     React.createElement("div",{style:{background:"linear-gradient(135deg,var(--acc),var(--acc2))",borderRadius:14,padding:"16px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}},
@@ -1955,9 +2011,36 @@ function BadgesView({history,exercises,prMap,streak}) {
                 React.createElement("div",{style:{fontSize:10,color:b.earned?"rgba(255,215,0,0.75)":"var(--dim)",lineHeight:1.4,marginTop:3}},b.desc)
               )
             );}
-            return React.createElement("div",{key:b.id,style:{background:b.earned?"var(--card)":"var(--s1)",border:"1.5px solid "+(b.earned?"var(--acc)":"var(--border)"),borderRadius:14,padding:"12px 10px",textAlign:"center",opacity:b.earned?1:0.5,animation:b.earned?"badge-pulse 3s ease-in-out infinite":"none"}},
-              BADGE_SVGS[b.id]?React.createElement("div",{style:{width:68,height:68,margin:"0 auto 6px",filter:b.earned?"none":"grayscale(1) brightness(.35)"},dangerouslySetInnerHTML:{__html:BADGE_SVGS[b.id]}}):React.createElement("div",{style:{fontSize:28,marginBottom:4,filter:b.earned?"none":"grayscale(1)"}},b.e),
-              React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:13,letterSpacing:.3,color:b.earned?"var(--acc)":"var(--muted)",marginBottom:2,fontWeight:700}},b.name),
+            var _isNew=activeNew&&activeNew.has(b.id);
+            var _glowColor=CAT_GLOW[b.cat]||"rgba(255,215,0,.45)";
+            return React.createElement("div",{key:b.id,className:"bgc-"+b.cat,style:{
+              position:"relative",overflow:"visible",
+              background:b.earned?"var(--card)":"var(--s1)",
+              border:"1.5px solid "+(b.earned?_glowColor:"var(--border)"),
+              borderRadius:14,padding:"12px 10px",textAlign:"center",
+              opacity:b.earned?1:0.42,
+              animation:_isNew?"badge-unlock 1.2s ease forwards":(b.earned?"badge-glow 3s ease-in-out infinite":"none"),
+              transition:"opacity .3s,border-color .3s"
+            }},
+              // Particle burst on unlock
+              _isNew&&React.createElement(BadgeParticles,{color:_glowColor}),
+              // Ring ripple on unlock
+              _isNew&&React.createElement(BadgeRing,{color:_glowColor}),
+              // Icon: SVG or emoji, with lock overlay for locked
+              React.createElement("div",{style:{position:"relative",display:"inline-block"}},
+                BADGE_SVGS[b.id]
+                  ?React.createElement("div",{style:{width:68,height:68,margin:"0 auto 2px",filter:b.earned?"none":"grayscale(1) brightness(.3)"},dangerouslySetInnerHTML:{__html:BADGE_SVGS[b.id]}})
+                  :React.createElement("div",{style:{fontSize:28,marginBottom:4,filter:b.earned?"none":"grayscale(1) brightness(.5)"}},b.e),
+                // Lock icon overlay for locked badges
+                !b.earned&&React.createElement("div",{style:{
+                  position:"absolute",bottom:-2,right:-2,
+                  width:18,height:18,borderRadius:"50%",
+                  background:"rgba(0,0,0,0.75)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontSize:10
+                }},"🔒")
+              ),
+              React.createElement("div",{style:{fontFamily:"var(--fh)",fontSize:13,letterSpacing:.3,color:b.earned?_glowColor:"var(--muted)",marginBottom:2,fontWeight:700,textShadow:b.earned?"0 0 10px "+_glowColor:"none"}},b.name),
               React.createElement("div",{style:{fontSize:9,color:"var(--dim)",lineHeight:1.3}},b.desc)
             );
           })
